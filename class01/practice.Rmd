@@ -1,0 +1,86 @@
+---
+title: "practice"
+output: html_document
+date: "2023-10-15"
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## Class 01: Quick start
+
+### Slides' Questions 1
+
+- The airquality is a dataset available in R
+```{r airquality}
+summary(airquality)
+```
+- How many variables there are in the data?
+Using help, we can find out how many variable the data has
+```{r}
+help("airquality")
+```
+It has 6 variables, Ozone, Solar, Wind, Temp, Month, Day
+
+- Define an R object which contain the information about the wind speed.
+
+```{r}
+wind_speed <- airquality$Wind
+```
+- Calculate the mean, and variance for the wind speed.
+```{r}
+print(mean(wind_speed))
+print(var(wind_speed))
+```
+### Slides' Questions 2
+- The ToothGrowth is a dataset available in R. Use help for more details
+```{r}
+help("ToothGrowth")
+```
+This dataset is data about the effect of Vitamin C on Tooth Growth in Guinea Pigs. Data has three variables, len, supp, and dose
+
+- The response variable is the Tooth length. Test if the Supplement type has an effect on the tooth length
+```{r}
+help(t.test)
+t.obj <- t.test(len ~ supp, data = ToothGrowth, var.equal = T)
+print(t.obj)
+```
+## Slides' Question 3
+
+- Use the ToothGrowth data, and produce an histogram
+
+
+```{r pressure, echo=FALSE}
+help(hist)
+hist(ToothGrowth$len, xlab="x", main="Tooth Length", col="green")
+```
+## Class 01: Introduction to R
+
+- Create a dataframe
+```{r}
+letters = c("A", "B", "C", "D", "E", "F")
+numbers = c(100, 99, 105, 35, 0, 250)
+test <- data.frame(letters, numbers)
+```
+- Create a file with data and read it
+```{r}
+fake_data <- read.table("ex1_data.txt")
+```
+
+- print your name x times
+```{r}
+x <- 10
+for (i in 1:10 ){
+  print("my name")
+}
+```
+
+- Write a function which receive a numerical vector as an input and calculate the mean of the vector.
+
+```{r}
+my_mean <- function(vector) {
+  return (mean(vector))
+}
+print(mean(c(1, 2, 3)))
+```
