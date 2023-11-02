@@ -1,0 +1,144 @@
+---
+title: "PracticalSession1"
+output: html_document
+date: "2023-10-15"
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+# Questions
+## Question 1
+- Draw a sample of size 10 from N(0, 1), and get mean, var.
+```{r}
+x <- rnorm(10, 0, 1)
+Stat <- c("mean", "var", "median")
+Value <- c(mean(x), var(x), median(x))
+object <- data.frame(Stat, Value)
+print(object)
+```
+## Question 2
+- Draw a random sample of size 100 from t(3)
+- Produce a histogram
+```{r}
+x <- rt(100, 3)
+hist(x, main="histogram of x", xlab="x", xlim=c(-5, 10), col="red", nclass=8)
+```
+## Question 3
+1. Define a vector x =(1,..10)
+2. Define an object y = x^2
+3. Plot x vs y
+
+```{r}
+x <- 1:10
+y <- x ^2
+plot(x, y)
+```
+## Question 4
+- We need cars data
+- print speed, stopping distance
+- plot speed vs distance
+- spearman corr speed and distance
+- min, max, median
+- y = (median(distance) + 3) * 10, get the mean of y
+```{r}
+speed = cars$speed
+distance = cars$dist
+print("speed")
+print(speed)
+print("distance")
+print(distance)
+plot(speed, distance)
+print("correlation")
+print(cor(speed, distance, method="pearson"))
+print("min")
+print(min(speed))
+print("max")
+print(max(speed))
+print("median")
+print(median(speed))
+y = (median(distance) + 3) * 10
+print("median of y")
+print(median(y))
+```
+## Question 5
+Produce a specific dataframe
+```{r}
+x <- c(1, 3, 5, 7)
+y <- c("one", "three", "five", "seven")
+df <- data.frame(x, y)
+print(df)
+```
+
+## Question 6
+From airquality dataset
+- How many observations and how many variables
+```{r}
+help(airquality)
+print("153 observations and 6 variables")
+```
+- Define an object x that contains temperature
+- Define an object Month
+- Boxplot
+```{r}
+x = airquality$Temp
+Month = airquality$Month
+print(x)
+print(Month)
+print(split(x, Month))
+boxplot(split(x, Month))
+```
+
+## Question 7
+1. y with ozone leve
+2. mean, median, min, max, std in a table
+3. graphs
+```{r}
+y = airquality$Ozone
+x = c("Mean", "Median", "Min", "Max", "Std")
+w = c(mean(y, na.rm=T), median(y, na.rm=T), min(y, na.rm=T), max(y, na.rm=T), sd(y, na.rm=T))
+df = data.frame(x, w)
+print(df)
+par(mfrow = c(1, 2))
+hist(y, main = "Histogram for Ozone Level")
+boxplot(y, main = "Boxplot for Ozone Level")
+```
+
+## Question 8
+- Define R as wind/temp
+- plot
+```{r}
+R = airquality$Wind / airquality$Temp
+plot(airquality$Day, R)
+```
+
+## Question 9
+- From last question add a red line with the median
+- Change labels
+
+```{r}
+R = airquality$Wind / airquality$Temp
+
+plot(airquality$Day, R, xlab="Day in the Month", ylab = "Ratio(Wind/Temp)")
+abline(h = median(R), col = "red")
+```
+
+## Question 10
+
+Using for loop
+- draw 1000 samples of size 31 from B(1, 0.5)
+- Calculate the mean for each sample 
+- Plot a histogram of the sample mean
+
+```{r}
+N = 1000
+m.x = c(1:N)
+for (i in 1:N) {
+  sample <- rbinom(31, 1, 0.5)
+  m.x[i] <- mean(sample)
+}
+hist(m.x)
+```
+
+
+
