@@ -1,0 +1,181 @@
+---
+title: "Practice_05_2"
+output: pdf_document
+date: "2023-12-20"
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+# Practical session 5
+## Practice From slides
+```{r}
+myList <- list(variable = 'experiment', data = 1:3)
+myList$variable
+myList$data
+```
+
+```{r}
+example.list <- list(m = iris, v = 1:20)
+example.list$m
+example.list$v
+is.list(example.list)
+num.list <- as.list(rnorm(3))
+num.list
+as.numeric(num.list)
+unlist(num.list)
+names(example.list) <- c("mat", "vec")
+example.list$vec
+```
+
+## Practice Session 1
+
+```{r}
+library(dplyr)
+library(data.table)
+data(starwars)
+```
+
+### Exercise 1
+- Load the starwars data from the dplyr package and convert to data.table.
+- Filter the observations which have NA for species.
+- Compute the average weight per species.
+```{r}
+starwars.dt <- as.data.table(starwars)
+starwars.dt <- starwars.dt[!is.na(species)]
+starwars.dt[, mean(height), by = species]
+```
+
+### Exercise 2
+- Load the starwars data from the dplyr package and convert to data.table.
+- Consider the females with information concerning height and mass.
+- Compute the BMI.
+```{r}
+starwars.dt <- as.data.table(starwars)
+res <- starwars.dt[gender == "feminine", ][, bmi := mass / (height / 100)^2]
+```
+
+### Exercise 3
+- Load the starwars data from the dplyr package and convert to data.table.
+- Compute the minimum and maximum mass per homeworld.
+- Only print the results in case there are multiple observations considered for the computation.
+```{r}
+starwars.dt <- as.data.table(starwars)
+res <- starwars.dt[, .(min_mass = min(mass), max_mass = max(mass)), by = homeworld][!is.na(min_mass) & !is.na(max_mass)]
+
+```
+
+### Exercise 4
+- Load the band_members and band_instruments data from the dplyr package and convert to data.table.
+- Add the instrument information for the band members.
+- Combine all information from the members and the instruments.
+
+```{r}
+band_members.dt <- as.data.table(band_members)
+band_instruments.dt <- as.data.table(band_instruments)
+res <- merge(band_members.dt, band_instruments.dt, by = "name")
+```
+
+## Practice Session 2
+```{r}
+library(tidyr)
+```
+
+### Exercise 1
+- Load the relig_income data from the tidyr package and convert to data.table.
+- Convert the data from wide format to long format.
+```{r}
+relig_income.dt <- as.data.table(relig_income)
+melt(relig_income.dt, id.vars = c("religion"), variable.name = "attribute", value.name = "value")
+```
+
+### Exercise 2
+- Load the storms data from the dplyr package and convert to data.table.
+- Create a variable date that combines the information in year, month and day.
+```{r}
+storms.dt <- as.data.table(storms)
+storms.dt[, date := paste0(year, "-", month, "-", day)]
+```
+
+## Practice Session 3
+### Exercise 1
+- Load the starwars data from the dplyr package and convert to data.table.
+- Group the data by homeworld and species.
+- Compute the minimum, maximum, median and mean for all numeric columns.
+```{r}
+starwars.dt <- as.data.table(starwars)
+numeric.cols <- sapply(starwars.dt, is.numeric)
+numeric.cols.names <- names(starwars.dt)[numeric.cols]
+starwars.dt.grouped <- starwars.dt[ ,  
+  unlist(recursive = F,
+         lapply(
+           .(mean = mean, sd = sd, min = min, max = max),
+           function(f) lapply(.SD, f)
+           )
+         ),
+  .SDcols = numeric.cols.names, 
+  by = .(homeworld, species)
+  ]
+```
+
+### Exercise 2
+- Load the starwars data from the dplyr package and convert to data.table.
+- Convert all column names to upper case.
+- Convert all character columns to upper case.
+```{r}
+starwars.dt <- as.data.table(starwars)
+colnames(starwars.dt) <- toupper(colnames(starwars.dt))
+char_cols <- sapply(starwars.dt, is.character)
+char_cols.names <- names(starwars.dt)[char_cols]
+starwars.dt[, (char_cols.names) := lapply(.SD, toupper), .SDcols = char_cols]
+```
+
+### Exercise 3
+- Load the storms data from the dplyr package and convert to data.table.
+- Remove the data which have NA for the numeric variables.
+- Group the data by all character variables.
+- Compute the mean for ts_diameter and hu_diameter.
+
+```{r}
+storms.dt <- as.data.table(storms)
+storms.dt <- storms.dt[complete.cases(storms.dt)]
+char_cols <- sapply(storms.dt, function(x) is.character(x) | is.factor(x))
+char_cols.names <- names(storms.dt)[char_cols]
+storms.dt[, lapply(.SD, mean), .SDcols = c("tropicalstorm_force_diameter", "hurricane_force_diameter"), by = char_cols.names]
+
+```
+
+## Practice Session 4
+
+
+### Exercise 1
+- Load the starwars data from the dplyr package and convert to data.table.
+- Print the fifth row for each species.
+```{r}
+starwars.dt <- as.data.table(starwars)
+numeric.cols <- sapply(starwars.dt, is.numeric)
+starwars.dt[, .SD[5], by = species, .SDcols = numeric.cols.names]
+
+```
+
+###Exercise 2
+- Load the storms data from the dplyr package and convert to data.table.
+- Consider the columns name, status and pressure.
+- Print for each storm, the 5 entries with the lowest pressure.
+```{r}
+storms.dt <- as.data.table(storms)
+storms.dt[, .(name, status, pressure)][order(name, pressure)][, .SD[1:min(5, .N)], by =name] # .N is the number of rows in the group
+
+```
+
+
+
+
+
+
+
+
+
+
+

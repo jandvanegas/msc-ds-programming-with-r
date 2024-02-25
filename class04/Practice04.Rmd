@@ -1,0 +1,135 @@
+---
+title: "Practice04"
+output: pdf_document
+date: "2023-12-18"
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## Some code from the book
+
+```{r, include=FALSE}
+library(dslabs)
+library(NHANES)
+library(tidyr)
+library(ggplot2)
+library(dplyr)
+```
+
+```{r}
+data("murders")
+head(murders)
+```
+```{r}
+ggplot(murders, aes(region, population)) + geom_jitter(position = position_jitter(width = 0.15))
+```
+```{r}
+ggplot(ChickWeight, aes(as.factor(Time), weight)) + geom_boxplot()
+```
+
+
+## Practical Session mutate
+*mtcars*
+```{r}
+mtcars.new <- mutate (mtcars, ration.mpg.wt = mpg/wt)
+ggplot(mtcars.new, aes(as.factor(cyl), ration.mpg.wt)) + geom_boxplot()
+```
+*murders data*
+```{r}
+ggplot(murders, aes(region, population)) + geom_boxplot()
+```
+## Practical session filter
+*nhanes*
+```{r}
+nhanes.bmi <- filter(NHANES, BMI >= 30)
+hist(filter(NHANES, Gender == "male")$BMI)
+```
+*chickwts*
+```{r}
+chickwts.filter1 <- filter(chickwts, weight <= 158)
+chickwts.filter2 <- filter(chickwts, feed == "horsebean")
+```
+
+
+## Practical session summerize
+*NHANES*
+```{r}
+NHANES.summary <- NHANES %>% summarize(mean = mean(BMI, na.rm = T), sd = sd(BMI, na.rm = T))
+print(NHANES.summary)
+NHANES.summary.filter <- NHANES %>% filter(Gender == "male") %>% summarize(mean = mean(BMI, na.rm = T), sd = sd(BMI, na.rm = T))
+print(NHANES.summary.filter)
+
+```
+*mtcars*
+```{r}
+mtcars.summary <- mtcars %>% summarize(mean = mean(wt, na.rm = T), sd = sd(wt, na.rm = T))
+print(mtcars.summary)
+mtcars.summary <- mtcars %>% filter(am == 0) %>% summarize(mean = mean(wt, na.rm = T), sd = sd(wt, na.rm = T))
+print(mtcars.summary)
+```
+
+## Practical session group_by
+*nhanes*
+```{r}
+NHANES %>% group_by(Gender) %>% summarize(mean = mean(BMI, na.rm = T), sd = sd(BMI, na.rm = T))
+NHANES %>% group_by(Diabetes) %>% summarize(mean = mean(Age, na.rm = T), sd = sd(Age, na.rm = T))
+```
+*mtcars*
+```{r}
+mtcars %>% group_by(am) %>% summarize(mean = mean(wt, na.rm = T), sd = sd(wt, na.rm = T))
+mtcars %>% group_by(cyl) %>% summarize(mean = mean(wt, na.rm = T), sd = sd(wt, na.rm = T))
+
+```
+## Practical session arrange
+*nhanes*
+```{r}
+NHANES %>% arrange(BMI)
+NHANES %>% filter(Diabetes == "Yes") %>% arrange(Age)
+```
+*mtcars*
+```{r}
+mtcars %>% arrange(mpg)
+```
+
+## Practical session arrange with 2 columns
+*nhanes*
+```{r}
+NHANES %>% arrange(Gender, BMI)
+NHANES %>% arrange(Smoke100, Age)
+```
+*chickwts*
+```{r}
+chickwts %>% arrange(feed, weight)
+
+```
+
+## Practical session top_n
+```{r}
+NHANES %>% top_n(10, BMI)
+new.df <- NHANES %>% top_n(5, Age) %>% head(5)
+new.df
+```
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

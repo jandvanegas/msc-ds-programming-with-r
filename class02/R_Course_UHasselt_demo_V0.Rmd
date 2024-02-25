@@ -14,9 +14,10 @@ params:
 knitr::opts_chunk$set(echo = TRUE)
 ```
 
-
+```{r}
 summary(mtcars)
 plot(mtcars$wt,mtcars$mpg)
 mean(mtcars$mpg)
 fit.lm<-lm(mtcars$mpg~mtcars$wt)
 summary(fit.lm)
+```

@@ -1,0 +1,22 @@
+---
+title: "Practice02"
+output: pdf_document
+date: "2023-12-12"
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## Mtcars
+```{r}
+head(mtcars)
+summary(mtcars)
+fit.lm<-lm(mtcars$mpg~ mtcars$cyl)
+```
+
+```{R}
+par(mfrow=c(1,2))
+boxplot(faithful$eruptions)
+hist(faithful$eruptions)
+```

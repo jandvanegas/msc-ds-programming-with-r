@@ -1,0 +1,96 @@
+---
+title: "Programming in R DL"
+author: "Juan VANEGAS"
+date: "`r Sys.Date()`"
+output: 
+  beamer_presentation:
+    slide_level: 2
+    theme: "CambridgeUS"
+subtitle: Question8 Exam part 1 (15/12/2023) 
+
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = FALSE)
+```
+
+```{r, include=FALSE}
+library(tidyverse)
+library(dplyr)
+library(ggplot2)
+library(ggrepel)
+library(likert)
+library(knitr)
+library(dropout)
+data("flying")
+names(flying)
+flying.df <- data.frame(flying[complete.cases(flying), ])
+
+```
+
+# Introduction
+
+## Description
+In this presentation we will analyze the dataset flying. This is a modified version of the Flying Etiquette Survey data behind the story: 41 percent of flyers say it's rude to recline your seat on an airplane.
+
+## Format
+The dataset flying is
+
+
+- a dataframe 1040 obs. and 28 columns, which are:
+- we will focus on the connection between:
+  - gender: gender of the respondent
+  - baby_on_plane: the question is: in general, is it rude to bring a baby on a plane?
+
+# Analysis
+## Response by gender
+
+The next table shows how people answered the question by gender.
+
+```{r}
+q6_1.df <- flying.df %>%
+  select(gender, baby_on_plane) %>%
+  group_by(gender, baby_on_plane) %>%
+  summarize(n=n(), .groups = "drop_last") %>%
+  mutate(percentage = n / sum(n) * 100)
+
+kable(q6_1.df)
+```
+## Graphical representation
+
+The next graph shows the same information as the table above.
+```{r fig.height=2, fig.width=5}
+ggplot(q6_1.df, aes(gender, percentage, fill=baby_on_plane, label=sprintf("%.1f %%", percentage))) +
+  geom_bar(stat="identity") +
+  geom_text(position = position_stack(vjust=0.5)) +
+  theme_bw()
+
+```
+
+# Hypothesis Tests
+
+## Test Statistic
+
+The next table shows the test statistic for the hypothesis test that gender and baby_on_plane are independent.
+
+```{r}
+q7_2.test <- chisq.test(flying.df$gender, flying.df$baby_on_plane)
+q7_2.test
+
+```
+
+## Graphical representation
+The next graph represents the position of the test statistic in the chi-square distribution.     
+
+```{r fig.height=2}
+q7_3.test.stat <- q7_2.test$statistic
+q7_3.test.df <- q7_2.test$parameter
+q7_3.test.density <- dchisq(q7_3.test.stat, q7_3.test.df)
+label = sprintf("Statistic = %.2f with density %.4f", q7_3.test.stat, q7_3.test.density)
+ggplot() +
+  stat_function(fun=dchisq, args=list(df=q7_3.test.df), color="gray") +
+  xlim(q7_3.test.stat - q7_3.test.stat / 2, q7_3.test.stat + q7_3.test.stat / 2) +
+  geom_vline(xintercept = q7_3.test.stat, color="black") +
+  labs(x="Test statistic", y="Density") +
+  geom_text(aes(x=q7_3.test.stat, y=q7_3.test.density, label=label), hjust=-0, vjust=-1) 
+```

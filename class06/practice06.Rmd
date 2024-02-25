@@ -1,0 +1,260 @@
+---
+title: "Practice06"
+output: pdf_document
+date: "2023-12-28"
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## Slides
+
+```{r}
+library(plotly)
+p <- ggplot(mtcars, aes(x = wt, y = mpg, text = rownames(mtcars))) +
+  geom_point() +
+  geom_text(aes(x = wt[rownames(mtcars) == "Merc 450SLC"],
+                y = mpg[rownames(mtcars) == "Merc 450SLC"],
+                label = "Merc 450SLC"),
+            size = 6, show.legend = FALSE)
+ggplotly(p)
+```
+```{r}
+plot_ly(
+  type = "scatter",
+  mode = "markers",
+  x = ~rnorm(100),
+  y = ~rnorm(100),
+  marker = list(
+    size = 10,
+    color = ~rnorm(100),
+    colorscale = "Viridis",
+    showscale = TRUE
+  )
+)
+
+```
+```{r}
+library(highcharter)
+data("economics_long", package = "ggplot2")
+economics_long2 <- economics_long %>%
+        filter(variable %in% c("pop", "unemploy", "uempmed")) %>%
+        print()
+hchart(economics_long2, "line", hcaes(x = date, y = value01, group = variable))
+```
+```{r}
+library(gganimate)
+ggplot(mtcars, aes(factor(cyl), mpg)) +
+  geom_boxplot() +
+  transition_time(vs)
+```
+## Practice Session
+
+In questions Q1-Q6 we focus on the penguins data which available as a part of the palmerpenguins Rpackage. To assess the data, you need ti install the package. More information about the data is availablein https://allisonhorst.github.io/palmerpenguins/.
+
+For all the questions (Q1-Q5) we conduct a complete caseanalysis, i.e., all observations should not have missing values. The first 6 lines in the data are shown below
+
+```{r}
+library(palmerpenguins)
+data("penguins", package = "palmerpenguins")
+penguins <- drop_na(penguins)
+#dim(penguins)
+#table(penguins$sex)
+head(penguins)
+```
+
+### Question 1
+1. Create a new data frame contains only the female.
+2. For the new data frame, calculate the mean, median and standard deviation for the variable
+flipper_length_mm by species and produce the table below.
+3. Produce the figures below.
+
+```{r}
+# 1
+penguins.f<-penguins %>% filter(sex=="female")
+# 2
+penguins.f.stats <- penguins.f %>% group_by(species) %>% summarise(mean=mean(flipper_length_mm),median=median(flipper_length_mm),sd=sd(flipper_length_mm))
+print(penguins.f.stats)
+```
+```{r}
+# 3
+library(ggplot2)
+ggplot(penguins.f, aes(x=flipper_length_mm, fill=species)) + geom_boxplot(alpha=0.5)
+```
+```{r}
+ggplot(penguins.f, aes(x=flipper_length_mm, fill=species)) + geom_density()
+```
+### Question 2
+
+1. Create a new data frame contains all the female with bill_depth_mm < 18. How many observations are included in the new data frame.
+2. Sort the data frame according to the value of bill depth.
+3. Calculate the quantiles of the bill depth.
+4. Define an indicator variable that takes the value of 1 for 16 < bill depth < 18 and zero otherwise. Produce a 2 × 3 contingency table (see below) of the indicator and species. Use a chi-square test to test the hypothesis that the indicator and the species are independent.
+5. Create a new data frame contains observations of female with bill depth between 16 to 18 mm. How many observations are included in the new data frame.
+
+```{r}
+# 1
+library(palmerpenguins)
+data("penguins", package = "palmerpenguins")
+penguins <- drop_na(penguins)
+penguins.f1<-penguins %>% filter(sex=="female")%>% filter(bill_depth_mm < 18)
+dim(penguins.f1)
+```
+```{r}
+# 2
+penguins.f1 %>% arrange(bill_depth_mm) %>% head()
+```
+```{r}
+# 3
+quantile(penguins.f1$bill_depth_mm)
+```
+```{r}
+# 5
+penguins.f2<-penguins %>% filter(sex=="female")%>% filter(bill_depth_mm >16 & bill_depth_mm < 18)
+dim(penguins.f2)
+```
+```{r}
+# 4
+penguins.f1<-penguins %>% filter(sex=="female")
+index<-penguins.f1$bill_depth_mm*0
+index[penguins.f1$bill_depth_mm >16 & penguins.f1$bill_depth_mm < 18] <- 1
+table(index,penguins.f1$species)
+```
+```{r}
+chisq.test(index,penguins.f1$species)
+```
+### Question 3
+
+In this question we focus on the variable bill_length_mm for the species Adelie and Chinstrap.
+1. Produce the figures below and fit a regression model based on your figure.
+```{r}
+library(palmerpenguins)
+data("penguins", package = "palmerpenguins")
+penguins <- drop_na(penguins)
+penguins.f<-penguins %>% filter(sex=="female")
+penguins.fac<-penguins.f %>% filter(species%in%c("Adelie","Chinstrap"))
+dim(penguins.fac)
+```
+```{r}
+ggplot(penguins,aes(bill_length_mm,bill_depth_mm,fill=species,color=species))+geom_point()
+```
+```{r}
+ggplot(penguins,aes(bill_length_mm,bill_depth_mm,fill=species,color=species))+geom_point()+geom_smooth(method="lm")
+```
+```{r}
+fit.1<-lm(bill_depth_mm~bill_length_mm+species,data=penguins)
+summary(fit.1)
+```
+### Question 4
+
+1. Create a new data frame contains only the Chinstrap species.
+2. Fit a linear regression model in which the body mass is the response and flipper length and gender are the predictors.
+3. Visualize your model.
+
+```{r}
+library(palmerpenguins)
+data("penguins", package = "palmerpenguins")
+penguins <- drop_na(penguins)
+penguins.c<-penguins %>% filter(species%in%c("Chinstrap"))
+ggplot(penguins.c,aes(flipper_length_mm,body_mass_g,fill=sex,color=sex))+geom_point()+geom_smooth(method="lm")
+```
+```{r}
+fit.2<-lm(body_mass_g~sex+flipper_length_mm:sex,data=penguins.c)
+summary(fit.2)
+```
+
+### Question 5:
+1. Create a new data frame contains all observations of the Biscoe island.
+2. Sort the new data by body_mass_g.
+3. Sort the new data by gender and body_mass_g.
+4. For the new data:
+(a) Test that the mean flipper length is equal cross the species levels.
+(b) Produce the figure below.
+(c) Use the chi-square test to test the hypothesis that species and gender are independent and produce the table below.
+
+```{r}
+library(palmerpenguins)
+data("penguins", package = "palmerpenguins")
+penguins <- drop_na(penguins)
+penguins.g<- penguins %>% filter(island%in%c("Biscoe"))
+t.test(penguins.g$flipper_length_mm~penguins.g$species)
+```
+```{r}
+ggplot(penguins.g,aes(flipper_length_mm,fill=species))+geom_boxplot()
+```
+```{r}
+table.contingency <-table(penguins.g$sex,penguins.g$species)
+print(table.contingency[, -c(2)])
+```
+```{r}
+chisq.test(penguins.g$sex,penguins.g$species)
+```
+### Question 6:
+1. In the penguins data, how many observations there are at each year.
+2. Produce the multi-way density and histogram below. 10
+3. Create a new dataset with observations before 2009 and include in the data the year, sex, body_mass_g.
+4. Define a new indicator variable which take the value of 1 for observations with body mass > 4000 and zero otherwise.
+5. Produce a 2 × 2 table (year X indicator) for the overall sample, for male and for female (separately).
+
+```{r}
+library(palmerpenguins)
+data("penguins", package = "palmerpenguins")
+penguins <- drop_na(penguins)
+ggplot(penguins, aes(body_mass_g,fill = year)) +
+geom_density() +
+facet_wrap(~year,ncol = 2)
+```
+```{r}
+library(lattice)
+histogram(~ penguins$body_mass_g | as.factor(penguins$year),
+data=penguins, layout = c(1, 3),
+aspect = 0.5,xlab = "body mass (gr)")
+```
+```{r}
+#table(penguins$year)
+#quantile(penguins$body_mass_g)
+penguins.g<- penguins %>% filter(year < 2009)
+body_m<-penguins.g$body_mass_g*0+1
+body_m[penguins.g$body_mass_g <4001]<-0
+table(body_m,penguins.g$year) # all sample
+```
+```{r}
+penguins.gf<- penguins.g %>% filter(sex=="female")
+#dim(penguins.gf)
+body_mf<-body_m[penguins.g$sex=="female"]
+#length(body_mf)
+table(body_mf,penguins.gf$year) #female
+```
+```{r}
+penguins.gm<- penguins.g %>% filter(sex=="male")
+#dim(penguins.gm)
+body_mm<-body_m[penguins.g$sex=="male"]
+#length(body_mm)
+table(body_mm,penguins.gm$year) #male
+```
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

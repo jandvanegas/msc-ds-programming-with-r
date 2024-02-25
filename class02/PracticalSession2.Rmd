@@ -1,0 +1,86 @@
+---
+title: "Practical Session2a"
+output: pdf_document
+author: Juan Vanegas
+date: "2023-12-16"
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## General Information
+- The practical session consists of 5 questions in which you are asked to conduct an analysis of a dataset or to use R for simple calculations. Datasets are available in R as data frames.
+- Your output should consists a PDF file which contains the results and R code.
+- Solutions will be available online in BB in a later stage (you will receive an email about this via BB).
+
+## Question 1
+
+In this question we focus on the airquality data which available as data frame in R. Use help(airquality) to
+get information about the data.
+1. Define an R object which contain the information about the wind speed.
+2. Calculate the mean, median and variance for the wind speed.
+3. Produce the figure below.
+```{r}
+windspeed <- airquality$Wind
+sprintf("mean: %f", mean(windspeed))
+sprintf("var: %f", var(windspeed))
+sprintf("median: %f", median(windspeed))
+```
+```{r}
+par(mfrow=c(1,2))
+hist(windspeed, xlab = "X", main = "Histogram of wind speed")
+boxplot(windspeed, col=2)
+```
+## Question 2
+In this question we focus on the ToothGrowth data which available as data frame in R. Use
+help(ToothGrowth) to get information about the data.
+1. The response variable is the Tooth length.
+2. Test if the Supplement type has an effect on the tooth length.
+```{r}
+head(ToothGrowth)
+```
+```{r}
+dim(ToothGrowth)
+```
+```{r}
+t.test(len~supp, var.equal=TRUE, data=ToothGrowth)
+```
+```{r}
+boxplot(ToothGrowth$len~ToothGrowth$supp, xlab="Group", ylab = "length")
+```
+## Question 3
+
+For the ToothGrowth data, produce an histogram for the tooth length (by group) with the following structure.
+
+```{r}
+par(mfrow=c(2,1))
+hist(ToothGrowth$len[ToothGrowth$supp == "VC"], col=2, xlim=c(0, 40))
+hist(ToothGrowth$len[ToothGrowth$supp == "OJ"], col=3, xlim=c(0, 40))
+```
+## Question 4
+Create the following data frame
+```{r}
+Name <- c("A", "B")
+Gender <- c("M", "M")
+Height <- c(180, 170)
+data.frame(Name, Gender, Height)
+```
+
+## Question 5
+In this question we focus on the chickwts data which available as data frame in R. Use help(chickwts) to get
+information about the data.
+1. Create a new data frame which contains data only of the horsebean and the soybean groups. How many observations are included in the new dataset.
+2. calculate the mean and standard deviation of the weight by group.
+
+```{r}
+newdata <- chickwts[chickwts$feed %in% c("horsebean", "soybean"), ]
+dim(newdata)
+```
+```{r}
+tapply(newdata$weight, newdata$feed, mean)
+tapply(newdata$weight, newdata$feed, sd)
+
+```
+
+

@@ -1,0 +1,712 @@
+---
+title: 'Programming in R (OC+DL): Solution for exam part 2 (15/01/2024)'
+output:
+  pdf_document: default
+  word_document: default
+  html_document: null
+header-includes: \usepackage{caption}
+subtitle: JUAN VANEGAS (2023/2024)
+---
+
+\captionsetup[figure]{labelformat=empty}
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+
+is_pdf <- try (("pdf_document" %in% rmarkdown::all_output_formats(knitr::current_input())), silent=TRUE)
+is_pdf <- (is_pdf == TRUE)
+```
+
+```{r, warning=FALSE, message=FALSE, echo=FALSE}
+library(tidyverse)
+library(dplyr)
+library(readxl)
+```
+
+
+\newpage
+
+# Part 1: the <tt>real_data_GDI</tt> data
+In this part of the exam, the questions are focused on the <tt>real_data_GDI</tt> dataset which is a part of the <tt>genderstat</tt> R package. To access the data you need to install the package. More information can be found on https://cran.r-project.org/web/packages/genderstat/index.html. Use the code below to access the data. 
+
+```{r, warning=FALSE, message=FALSE}
+library(genderstat)
+data("real_data_GDI")
+names(real_data_GDI)
+```
+
+## Question 1
+1. Create a new dataset, <tt>gdi</tt>, by removing all missing values from <tt>real_data_GDI</tt>. How many observations are included in the new data? Below you can see the first few lines of the data. As you can see, each country appears in one line in which information is available on both female and male. 
+
+### Solution 1.1
+```{r}
+gdi <- real_data_GDI %>%
+  filter(complete.cases(.))
+paste(nrow(gdi), "observations")
+```
+
+
+2. Create a new data, <tt>gdi2</tt>, by transforming the <tt>gdi</tt> dataset from Q1.1 into a dataset for which the information for each country appears in two lines: one for female and one for male, see the first few lines below. For example, as shown below, for Afghanistan, the first line contains information about female and the second line information about male.
+
+### Solution 1.2
+```{r}
+# TODO pivot instead
+genders <- c("male", "female")
+female_data <- gdi %>%
+  mutate(gender="female") %>%
+  mutate(gender=factor(gender, levels=genders)) %>%
+  select(gender, country, female_life_expectancy, female_mean_schooling, female_gni_per_capita) %>%
+  rename(life_expectancy = female_life_expectancy) %>%
+  rename(mean_schooling = female_mean_schooling) %>%
+  rename(gni_per_capita = female_gni_per_capita)
+
+male_data <- gdi %>%
+  mutate(gender="male") %>%
+  mutate(gender=factor(gender, levels=genders)) %>%
+  select(gender, country, male_life_expectancy, male_mean_schooling, male_gni_per_capita) %>%
+  rename(life_expectancy = male_life_expectancy) %>%
+  rename(mean_schooling = male_mean_schooling) %>%
+  rename(gni_per_capita = male_gni_per_capita)
+
+gdi2 <- bind_rows(female_data, male_data)  %>%
+  arrange(country) %>%
+  select(country, gender, life_expectancy, mean_schooling, gni_per_capita)
+head(gdi2)
+```
+
+
+3. Use the <tt>gdi2</tt> dataset created in Q1.1 and define new variables: (1) <tt>Measurement</tt>, which includes the information about the type of the measurement (<tt>life_expectancy</tt>, <tt>mean_schooling</tt> and <tt>gni_per_capita</tt>) and (2) <tt>Values</tt> which contains the corresponding values of the measurement. Define a new dataset, <tt>gdi3</tt>, shown below. Note that only the first 18 lines of the data are printed and, as can be seen, the data for each country appears in 6 lines.    
+  
+### Solution 1.3
+```{r}
+gdi3 <- gdi2 %>%
+  pivot_longer(cols = c(life_expectancy, mean_schooling, gni_per_capita), names_to = "Measurement", values_to = "Values")
+head(gdi3)
+```
+
+
+4. For the new dataset <tt>gdi3</tt>, replace the "_" in column <tt>Measurement</tt> by " " (space), as shown below. 
+  
+
+### Solution 1.4
+```{r}
+gdi3 <- gdi3 %>%
+  mutate(Measurement = str_replace(Measurement, "_", " "))
+head(gdi3)
+```
+
+
+## Question 2  
+
+1. In this question, we use the <tt>gdi</tt> dataset created in Q1.1. Produce Figure 2.1 which presents a figure with **two** separate plots in one column and two rows.
+
+### Solution 2.1
+```{r height=5, width=2}
+# ggplot dots in red and the y line should be on the right
+p1 <- ggplot(gdi, aes(x=female_gni_per_capita, y = female_life_expectancy)) +
+  geom_point(color="lightcoral") +
+  theme_bw() +
+  scale_y_continuous(position="right")
+p2 <- ggplot(gdi, aes(male_gni_per_capita, y = male_life_expectancy)) +
+  geom_point(color="turquoise") +
+  scale_y_continuous(position="right") +
+  theme_bw()
+gridExtra::grid.arrange(p1, p2, ncol=1)
+  
+```
+
+
+2. In this question, use the <tt>gdi2</tt> dataset and produce Figure 2.2.
+
+### Solution 2.2
+```{r height=5, width=2}
+ggplot(gdi2, aes(x=gni_per_capita, y = life_expectancy, color = gender)) + 
+  geom_point() +
+  theme_bw() +
+  facet_wrap(~gender, ncol=1)
+  
+```
+## Question 3
+
+1. Use the <tt>gdi</tt> dataset that was created in Q1.1. Create a new variable <tt>diff</tt> which is the difference between female and male life expectancy and add this variable to the dataset.
+
+### Solution 3.1
+```{r}
+gdi <- gdi %>%
+  mutate(diff = female_life_expectancy - male_life_expectancy)
+head(gdi)
+```
+
+
+2. Create a summary table of the minimum, maximum, mean and the $25\%$ quantile of the variable <tt>diff</tt>. Create a new R object, <tt>q25</tt>, which is equal to the $25\%$ quantile of the variable <tt>diff</tt> and print it. 
+
+### Solution 3.2
+```{r}
+data.frame(min = min(gdi$diff), max = max(gdi$diff), mean = mean(gdi$diff), q25 = quantile(gdi$diff, 0.25))
+q25 <- quantile(gdi$diff, 0.25)
+q25
+```
+
+
+3. Create a new dataset, <tt>gdi_new</tt>, that consists of countries with the life expectancy gap between gender (the variable <tt>diff</tt>) less than its <tt>q25</tt>. How many countries are included in the new data?
+
+### Solution 3.3
+```{r}
+gdi_new <- gdi %>%
+  filter(diff < q25)
+head(gdi_new)
+```
+
+
+4. Select 10 countries with the largest <tt>female_gni_per_capita</tt> from the new data created in Q3.2. Produce Figure 3.1.
+
+### Solution 3.4
+```{r}
+q3_4.df <- gdi_new %>%
+  arrange(-female_gni_per_capita) %>%
+  head(10)
+ggplot(q3_4.df, aes(x=country, y=diff)) +
+  geom_col(fill="grey") +
+  theme_bw() +
+  geom_text(aes(label = round(diff, 2)), hjust = 1, color = "black") +
+  coord_flip()
+```
+
+
+5. Show the countries with <tt>female_life_expectancy</tt> higher than 85 in different colours as seen in Figure 3.2.
+```{r}
+# todo fix
+ggplot(q3_4.df, aes(x=country, y=diff)) +
+  geom_col(aes(fill = ifelse(diff > 85, "cyan", "gray"))) +
+  theme_bw() +
+  geom_text(aes(label = round(diff, 2)), hjust = 1, color = "black") +
+  coord_flip()
+
+```
+
+
+### Solution 3.5
+
+# Part 2 : the <tt>flying</tt> data
+
+
+For the analysis of this part we use the <tt>flying</tt> data which is a part of the R package <tt>dropout</tt>. This is a modified version of the Flying Etiquette Survey data. More information can be found in https://CRAN.R-project.org/package=dropout. The code below can be used to access the data
+```{r, warning=FALSE}
+library(dropout)
+data("flying")
+names(flying)
+```
+
+## Question 4
+For this question, use <tt>flying</tt> data without the missing values.
+
+1.  Calculate the frequency and the percentage of each response to the question "in a row of two seats, who should get to use the middle arm rest?" (variable <tt>middle_armrest</tt>) and define the dataframe shown below (note that the dataframe shows the different categories of the question, the number of answers and the percentage). 
+
+### Solution 4.1
+```{r}
+flying <- flying %>%
+  filter(complete.cases(.))
+q4_1.df <- flying %>%
+  filter(!is.na(middle_armrest)) %>%
+  group_by(middle_armrest) %>%
+  summarise(n = n()) %>%
+  mutate(percentage = round(n/sum(n)*100, 2))
+q4_1.df
+```
+
+
+
+2. Produce Figure 4.1.
+
+### Solution 4.2
+```{r}
+ggplot(q4_1.df, aes(x = "", y = n, fill = middle_armrest, label = paste(percentage, "%"))) +
+  geom_col(width = 1, color = "black") +
+  geom_text(position = position_stack(vjust = 0.5), color="white") +
+  coord_polar(theta = "y", direction = 1) +
+  theme_void()
+
+```
+
+
+3. Produce Figure 4.2.
+
+
+### Solution 4.3
+```{r}
+# generate the same as before but with the center not filled
+
+ggplot(q4_1.df, aes(x = "", y = n, fill = middle_armrest, label = paste(percentage, "%"))) +
+  geom_col(width = 1, color = "black") +
+  geom_text(position = position_stack(vjust = 0.5), color="white") +
+  coord_polar(theta = "y", direction = -1) +
+  theme_void() +
+  annotate("rect", xmin = 0, xmax = 0.6, ymin = 0, ymax = Inf, fill = "white", alpha = 1, color="black")
+```
+
+
+## Question 5
+
+
+1. For this question, use <tt>flying</tt> data without the missing values. We focus on the variables <tt>middle_armrest</tt> and <tt>age</tt>. Produce the table shown below, which shows the frequency of each response to the question "in a row of two seats, who should get to use the middle arm rest?" across the age of the respondents.
+
+### Solution 5.1
+```{r}
+q5_1.df <- flying %>%
+  group_by(middle_armrest, age) %>%
+  summarise(n = n(), .groups = "drop") %>%
+  pivot_wider(names_from = age, values_from = n)
+q5_1.df
+```
+
+
+2. Use a chi-square test to test the hypothesis <tt>middle_armrest</tt> and <tt>age</tt> are independent.
+
+### Solution 5.2
+```{r}
+chisq.test(q5_1.df[,2:5])
+
+```
+
+
+# Part 3: the external <tt>opt</tt> datasets (Q6-Q8)
+In this section, we focus on 3 **external** Excel files that contain data of Obstetrics and Periodontal Therapy.The external files are avilable online in BB. Description of each variable can be seen in  https://rdrr.io/cran/medicaldata/man/opt.html. To access the datasets <tt>opt1</tt>, <tt>opt2</tt> and <tt>opt3</tt>, these Excel files first need to be imported to R. This means that you need to read these external files to R. The excel files are available in BB. If you do not know how to do it you can look at https://datatofish.com/import-excel-r/. \newline
+
+The datasets <tt>opt1</tt> and <tt>opt2</tt> contain the same information about different trial participants (i.e., different subjects), while the dataset <tt>opt3</tt> contains additional information about the medical condition (disease) of the participants. Variables names for all datasets are given below.
+
+```{r}
+opt1 <- read_excel("opt1.xlsx")
+opt2 <- read_excel("opt2.xlsx")
+opt3 <- read_excel("opt3.xlsx")
+```
+```{r}
+names(opt1)
+```
+```{r}
+names(opt2)
+```
+```{r}
+names(opt3)
+```
+
+
+
+## Question 6
+
+In this question we focus on the dataset <tt>opt3</tt>. 
+
+
+  1. In the <tt>opt3</tt> dataset, the variable <tt>Diabetes</tt> is recorded as "Yes" and "No" while the variable <tt>Hypertension</tt> as "Y" and "N" (see the panel below). Replace values of <tt>Hypertension</tt> from "Y" into "Yes" and "N" into "No".
+  
+### Solution 6.1
+```{r}
+opt3 <- opt3 %>%
+  mutate(Hypertension = ifelse(Hypertension == "Y", "Yes", "No"))
+head(opt3)
+```
+
+
+
+  2. Produce a $2 \times 2$ table for **Hypertension X Diabetes** and based on this table, produce Figure 6.1 which shows the proportion of observations in each combination of Hypertension and Diabetes.
+  
+### Solution 6.2
+
+```{r}
+q6_2.df <- opt3 %>%
+  group_by(Hypertension, Diabetes) %>%
+  summarise(n = n(), .groups = "drop") %>%
+  mutate(percentage = round(n/sum(n)*100, 2)) %>%
+  mutate(type = paste("Hyper.-", substr(Hypertension, 1, 1), "Diab.-", substr(Diabetes, 1, 1)))
+head(q6_2.df)
+```
+```{r}
+ggplot(q6_2.df, aes(x = type, y = percentage)) +
+  geom_col() +
+  theme_gray()
+```
+
+  
+  3. Use the R function <tt>prop.test()</tt> to test the hypothesis that the proportion of Hypertension among the subjects with Diabetes is equal to the proportion of Hypertension among the subjects without Diabetes.  
+
+### Solution 6.3
+```{r}
+# TODO - add the solution
+```
+
+  
+  4. In the dataset created in Question 6.1, the information of each patients appears in one line. Define a new variable, <tt>Disease</tt> which includes the information about the two variables <tt>Hypertension</tt> and <tt>Diabetes</tt> in one "Yes/No" variable. Note that after the transformation the new data consists of **two lines per subject** as can be seen in the panel below.  
+  
+  
+### Solution 6.4  
+```{r}
+q6_4.df <- opt3 %>%
+  pivot_longer(cols = c(Hypertension, Diabetes), names_to = "Disease", values_to = "Yes/No")
+head(q6_4.df)
+```
+  
+
+
+
+## Question 7
+
+1. For each of the three datasets that you imported to R, how many observations and variables are included in the dataset?
+
+### Solution 7.1
+```{r}
+nrow(opt1)
+```
+```{r}
+nrow(opt2)
+```
+```{r}
+nrow(opt3)
+```
+
+
+
+2. Merge the datasets <tt>opt1</tt>, <tt>opt2</tt> and <tt>opt3</tt> and include all participants from the datasets <tt>opt1</tt> and <tt>opt2</tt>. How many observations (lines) and variables (columns) there are in the merged dataset?
+
+### Solution 7.2
+```{r}
+opt2.temp.df <- opt2 %>%
+  rename(PID=Participant_ID)
+q7_2.df <- bind_rows(opt1, opt2.temp.df)
+q7_2.df <- q7_2.df %>%
+  left_join(opt3, by = join_by(PID==participantID))
+head(q7_2.df)
+dim(q7_2.df)
+```
+
+
+3. For the merged dataset, count the missing data in each variable and remove them. 
+
+### Solution 7.3
+```{r}
+q7_2.df %>%
+  summarise_all(funs(sum(is.na(.))))
+```
+```{r}
+q7_3.df <- q7_2.df %>%
+  filter(complete.cases(.))
+dim(q7_3.df)
+```
+
+
+
+4. Produce Figure 7.1 and Figure 7.2 below and calculate the correlation between <tt>BMI</tt> and <tt>Birthweight</tt> for individuals from group C and individuals from group T (for each group separately, you can make the selection based on the variable <tt>Group</tt>).
+
+### Solution 7.4
+```{r}
+ggplot(q7_3.df, aes(x = BMI, y = Birthweight, color=as.factor(Group))) +
+  geom_point() +
+  theme_light()
+```
+```{r}
+ggplot(q7_3.df, aes(x = BMI, y = Birthweight)) +
+  geom_point() +
+  facet_wrap(~Group) +
+  stat_smooth(method = "lm", se = T, formula = y ~ x) 
+
+```
+
+```{r}
+paste("group C")
+cor(q7_3.df$BMI[q7_3.df$Group == "C"], q7_3.df$Birthweight[q7_3.df$Group == "C"])
+```
+
+```{r}
+paste("group T")
+cor(q7_3.df$BMI[q7_3.df$Group == "T"], q7_3.df$Birthweight[q7_3.df$Group == "T"])
+```
+
+5. Use the merged data that you created in Question 7.3 to create a new data frame for all individuals older than 25 years old. How many observations are included in the new dataset? Produce Figure 7.3 for the new data which presents the Age Vs. Birthweight for each level of Diabetes colored by education level.
+
+### Solution 7.5
+```{r}
+q7_5.df <- q7_3.df %>%
+  filter(Age > 25)
+nrow(q7_5.df)
+```
+```{r}
+ggplot(q7_5.df, aes(x = Age, y = Birthweight, color=as.factor(Education))) +
+  geom_point() +
+  theme_light() +
+  facet_wrap(~Diabetes)
+```
+
+
+6. Fit a linear regression model which includes the effect of the treatment group (the variable <tt>Group</tt>), hypertension and diabetes on the birth weight.
+
+### Solution 7.6
+```{r}
+lm(Birthweight ~ Group + Hypertension + Diabetes, data = q7_3.df)
+```
+
+
+7. Use the merged data that you created in Question 7.3 to create a new data frame for all individuals participated in the Intervention (T) group from Enrollment Center: Harlem Hospital (NY). For selection, you can use the variable <tt>Clinic</tt>. 
+
+### Solution 7.7
+```{r}
+q7_7.df <- q7_3.df %>%
+  filter(Group == "T" & Clinic == "NY")
+nrow(q7_7.df)
+```
+
+
+8. Produce Figure 7.4, to visualize the infant birth weight at time of birth of each participant.
+
+### Solution 7.8
+  
+```{r}
+PID_levels <- q7_7.df%>%
+  arrange(Birthweight) %>%
+  select(PID)
+ggplot(q7_7.df, aes(x = factor(PID, levels=PID_levels$PID), y = Birthweight)) +
+  geom_point() +
+  theme_light() +
+  geom_segment(aes(xend = factor(PID, levels=PID_levels$PID), y = 0, yend = Birthweight), color = "grey") +
+  coord_flip()
+  
+```
+
+
+9. Highlight participants who had chronic hypertension at baseline with different color as shown in Figure 7.5.
+
+### Solution 7.9
+# TODO add color
+```{r}
+# Todo fix color
+PID_levels <- q7_7.df%>%
+  arrange(Birthweight) %>%
+  select(PID)
+ggplot(q7_7.df, aes(x = factor(PID, levels=PID_levels$PID), y = Birthweight)) +
+  geom_point() +
+  theme_light() +
+  geom_segment(aes(xend = factor(PID, levels=PID_levels$PID), y = 0, yend = Birthweight, color=Hypertension)) +
+  coord_flip() +
+  scale_color_manual(values=c("Yes"= "red", "No"= "black"))
+  
+  
+  
+```
+
+
+## Question 8
+
+For this question, use the merged dataset that was created in Question 7.
+
+
+ 1. The table below presents the summary statistics (mean, standard deviation, median, minimum, maximum, sample size) of the variables <tt>Birthweight</tt> by group (<tt>Group</tt>). Produce the same table.
+ 
+ 
+
+### Solution 8.1
+```{r}
+q8.1.df <- q7_3.df %>%
+  group_by(Group) %>%
+  summarise(
+    mean = mean(Birthweight, na.rm = T),
+    sd = sd(Birthweight, na.rm = T),
+    median = median(Birthweight, na.rm = T),
+    min = min(Birthweight, na.rm = T),
+    max = max(Birthweight, na.rm = T),
+    n = n()
+  )
+q8.1.df
+```
+
+ 
+ 
+ 2. Write a function that received as an input a dataset <tt>data1</tt>, a numerical variable name <tt>x</tt>, a factor <tt>z</tt> and produces as an output the table of the summary statistics in presented in Question 8.1. Apply this function for the variables <tt>Age</tt> from the dataset <tt>opt1</tt> and the variable <tt>Birthweight</tt> of the dataset that you used in Question 8.1. For both, the factor should be <tt>Group</tt>.
+
+
+### Solution 8.2
+```{r}
+summary_stats <- function(data1, x, z){
+  data1 %>%
+    group_by({{z}}) %>%
+    summarise(
+      mean = mean({{x}}, na.rm = T),
+      sd = sd({{x}}, na.rm = T),
+      median = median({{x}}, na.rm = T),
+      min = min({{x}}, na.rm = T),
+      max = max({{x}}, na.rm = T),
+      n = n()
+    )
+}
+summary_stats(q7_3.df, Age, Group)
+```
+
+
+
+# Part 4: the <tt>unemp</tt> data
+In this part of the exam, the questions are focused on the <tt>unemp</tt> dataset which is a part of the <tt>viridis</tt> R package. To access the data you need to install the package. More information can be found in https://cran.r-project.org/web/packages/viridis/viridis.pdf. Use the code below to access the data. 
+
+```{r, warning=FALSE, message=FALSE}
+library(viridis)
+data(unemp)
+names(unemp)
+```
+
+## Question 9
+
+1. How many counties have unemployment rates (the variable <tt>rate</tt>) higher than the 0.75 quantile? How many counties have unemployment rates lower than the 0.25 quantile?
+
+### Solution 9.1
+```{r}
+q9.1.df <- unemp %>%
+  filter(rate > quantile(rate, 0.75) | rate < quantile(rate, 0.25))
+nrow(q9.1.df)
+```
+
+
+
+2. Create a subset of the dataset with states starting with the letter 'N' (NC,ND,NY, etc.,,,). How many observations and states are included in the new dataset? How many observations per state there are in the new dataset?
+```{r}
+# letter N
+q9.2.df <- unemp %>%
+  filter(startsWith(state, "N"))
+nrow(q9.2.df)
+q9.2_2.df <- q9.2.df %>%
+  group_by(state) %>%
+  summarise(n = n())
+q9.2_2.df
+
+```
+
+
+### Solution 9.2
+
+
+3. For the new dataset created in in Q9.2. Produce the pie plot and the barplot in a figure with one row of two panels, as presented in Figure 9.1. Note that both the pie and the bar plot show the number of observations per state.
+
+### Solution 9.3
+```{r}
+p2 <- ggplot(q9.2_2.df, aes(x="", y = n, fill=state)) +
+  geom_col(width = 1, color="black") +
+  coord_polar("y", start = 0, direction=1) +
+  geom_text(aes(label = n), position = position_stack(vjust = 0.5)) 
+
+p1 <- ggplot(q9.2_2.df, aes(x = state, y =n, fill=state)) +
+  geom_col(color="black") +
+  geom_text(aes(label = n), vjust = -0.5) +
+  labs(x = "State", y = "Count")
+
+gridExtra::grid.arrange(p2, p1, nrow = 1)
+```
+
+
+
+4. Create a subset of the dataset with states starting with the letter 'W'. Compute summary statistics (count, mean, sd) of the rate (the variable <tt>rate</tt>) by the variable <tt>state</tt> and produce that dataframe shown below.
+
+
+### Solution 9.4
+```{r}
+q9.4.df <- unemp %>%
+  filter(startsWith(state, "W")) 
+
+q9.4.df %>%
+  group_by(state) %>%
+  summarise(
+    count = n(),
+    mean = mean(rate, na.rm = T),
+    sd = sd(rate, na.rm = T)
+  )
+```
+
+
+5. For the dataset created in Q9.4, produce Figure 9.2 presented below.
+
+### Solution 9.5
+```{r}
+p1 <- ggplot(q9.4.df, aes(x = state, y = rate, fill=state)) +
+  geom_col()
+p2 <- ggplot(q9.4.df, aes(x = state, y = rate, fill=state)) +
+  geom_boxplot()
+p3 <- ggplot(q9.4.df, aes(x = state, y = rate, fill=state)) +
+  geom_violin()
+p4 <- ggplot(q9.4.df, aes(x = state, y = rate, fill=state)) +
+  geom_density()
+gridExtra::grid.arrange(p1, p2, p3, p4, nrow = 2)
+```
+
+
+6. For that dataset created in Q9.4, fit a one-way ANOVA model in which the rate (the variable <tt>rate</tt>) is the independent variable and the state (<tt>state</tt>) is the factor. Print the F test statistics.
+
+
+### Solution 9.6
+```{r}
+q9_6 <- anova(lm(rate ~ state, data = q9.4.df))
+q9_6$`F value`
+```
+
+
+7. produce Figure 9.3.
+
+
+### Solution 9.7
+```{r}
+ggplot(q9.4.df, aes(x = rate, fill=state)) +
+  geom_histogram() +
+  facet_wrap(~state, ncol = 2)
+
+```
+
+
+
+# Part 5: the <tt>fish</tt> data
+
+In this part we use the data <tt>fish</tt> which is a part of the <tt>rrcov</tt> R package. To access the data you need to install the package. More information can be found in https://search.r-project.org/CRAN/refmans/rrcov/html/fish.html. You can use the code below to access the data.
+
+```{r, warning=FALSE, message=FALSE}
+library(rrcov)
+data(fish)
+names(fish)
+```
+
+
+## Question 10
+
+Our aim in Q10.1-Q10.5 is to explore the correlation between the first 6 variables (i.e., the first 6 columns) in the <tt>fish</tt> dataset. 
+
+1. Produce Figure 10.1 using the <tt>pairs()</tt> function. Note that data are colored according to the variable <tt>Species</tt>.
+
+
+### Solution 10.1
+
+
+2. Produce Figure 10.2 using R package <tt>GGally</tt>.
+
+### Solution 10.2
+
+
+3. Produce Figure 10.3 using R package psych.
+
+### Solution 10.3
+
+4. Produce Figure 10.4 using R package <tt>corrplot</tt>. Use the <tt>fish</tt> dataset without missing values.
+
+### Solution 10.4
+
+
+5. Produce Figure 10.5 using R package <tt>corrplot</tt>. Use the <tt>fish</tt> dataset without missing values. Note that the variables are presented according to alphabet order.
+
+### Solution 10.5
+
+
+6. In the <tt>fish</tt> dataset, observation 14 has a missing value in the variable <tt>Weight</tt>. Replace the missing value for this observation with the value 1253 and create a new dataset, <tt>fish2</tt>. Use the new dataset, create a scatter plot with connecting dots by a line as Figure 10.6 below:
+
+### Solution 10.6
+
+
+7. For the dataset created in Question 10.4, test if the variances of the <tt>Length3</tt> and <tt>Length1</tt> variables are equal. Use significance level of $5\%$.
+
+### Solution 10.7
+
+8. Based on the result of Question 10.7, conduct a t-test to test the hypothesis that the mean of <tt>Length3</tt> is greater than the mean of <tt>Length1</tt>.
+
+### Solution 10.8
+
+
+
+

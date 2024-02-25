@@ -1,0 +1,227 @@
+---
+title: "PharmaStudy"
+output: pdf_document
+date: "`r Sys.Date()`"
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r}
+ext.data1 <- read.csv("data/data1.csv")
+ext.data2 <- read.csv("data/data2.csv")
+ext.data3 <- read.csv("data/data3.csv")
+```
+
+```{r}
+paste("Data1 n:", nrow(ext.data1))
+paste("Data2 n:", nrow(ext.data2))
+paste("Data3 n:", nrow(ext.data3))
+```
+```{r}
+paste("Names of Data1:", names(ext.data1))
+paste("Names of Data2:", names(ext.data2))
+paste("Names of Data3:", names(ext.data3))
+```
+# Categorical Variables
+## Visualization barplots
+```{r}
+xx1 <- table(ext.data1$Type)
+barplot(xx1/nrow(ext.data1), main = "Data1", xlab = "Type", ylab = "Frequency")
+```
+```{r}
+xx2 <- table(ext.data1$Gender)
+barplot(xx2/nrow(xx2), width = 1, space = NULL,  names.arg=c("M", "F"))
+```
+## Inference
+
+```{r}
+table(ext.data1$Type, ext.data1$group)
+```
+```{r}
+chisq.test(table(ext.data1$Type, ext.data1$group))
+```
+```{r}
+table(ext.data1$Gender, ext.data1$group)
+```
+
+```{r}
+chisq.test(table(ext.data1$Gender, ext.data1$group))
+```
+# Continous Variables
+```{r echo=FALSE}
+library(Rmisc)
+```
+## Visualization
+```{r}
+boxplot(split(ext.data1$weight, ext.data1$group), names=c("A", "B", "C") , xlab="weight")
+```
+## Mean & SD by group
+```{r}
+tapply(ext.data1$weight, ext.data1$group, mean)
+tapply(ext.data1$weight, ext.data1$group, sd)
+```
+## Inference
+```{r}
+anova(aov((ext.data1$weight)~(ext.data1$group)))
+```
+```{r}
+pairwise.t.test(ext.data1$weight, ext.data1$group, p.adjust.method = "bonferroni", data=ext.data1)
+
+```
+## CI by group
+```{r}
+library(Rmisc)
+CI(ext.data1$weight[ext.data1$group=="A"], ci=0.95)
+CI(ext.data1$weight[ext.data1$group=="B"], ci=0.95)
+CI(ext.data1$weight[ext.data1$group=="C"], ci=0.95)
+
+```
+
+# Analysis plan
+- The response variable in this study is the distance traveled by the rat during the experiment.
+- The R object y.
+- Analysis:
+  – Visualization:
+    - Distribution of distance and log(distance) across treatment groups.
+    – Inference:
+      - One-way ANOVA for log(distance) with treatment as a factor.
+      - All pairwise comparisons (Bonferroni correction).
+
+## Visualization
+```{r}
+boxplot(split(log(ext.data1$y), ext.data1$group))
+```
+## Inference: one-way ANOVA
+```{r}
+anova(aov(log(ext.data1$y)~(ext.data1$group)))
+```
+## Inference: pairwise comparisons
+```{r}
+pairwise.t.test(log(ext.data1$y), ext.data1$group, p.adjust.method = "bonferroni", data=ext.data1)
+```
+# Adjusted Response
+- An adjusted response: the ratio between the distance traveled by the rat to the duration of the experiment:
+R= distance/ duration
+- The same analysis as before.
+
+
+## Visualization
+```{r}
+boxplot(split(log(ext.data1$y/ext.data1$Duration), ext.data1$group))
+```
+## Inference: one-way ANOVA
+```{r}
+anova(aov(log(ext.data1$y/ext.data1$Duration)~(ext.data1$group)))
+```
+
+
+## Inference: pairwise comparisons
+```{r}
+pairwise.t.test(log(ext.data1$y/ext.data1$Duration), ext.data1$group, p.adjust.method = "bonferroni", data=ext.data1)
+```
+# Subset Analysis
+- data2: additional 75 rats (which are not included in the first study) of Type 1 and 2 received drug B.
+- data2 contains the information about their results.
+- The same variables as data1.
+
+The new datasets
+For the analysis:
+– Select the rats of Type 1 and 2 which received drug B in the first experiment and create a new dataset for these rates.
+– Create a new dataset with Type 1 and 2 rats who received drug B in the first experiment and the rats from the second experiments.
+
+## Reading
+```{r}
+ext.data2 <- read.csv("data/data2.csv")
+dim(ext.data2)
+```
+## Selecting data 1
+```{r}
+ext.data1.b <- ext.data1 %>% filter(Type %in% c(1,2), group=="B")
+dim(ext.data1.b)
+```
+## Merging the files
+```{r}
+data12 <- rbind(ext.data1.b, ext.data2)
+dim(data12)
+```
+## Visualization
+```{r}
+exp.i <- c(rep(1, nrow(ext.data1.b)), rep(2, nrow(ext.data2)))
+data12_a <- data.frame(data12, exp.i)
+dim(data12_a)
+```
+
+```{r}
+boxplot(split(data12_a$y, data12_a$exp.i))
+```
+## the experimenet indicator
+```{r}
+tapply(data12_a$Duration, data12_a$exp.i, mean)
+```
+## Inference
+- Test if the distance travelled by the rats on experiment 1 is the same as the distance traveled by the rats in experiment 2.
+- Fit a two way ANOVA model in which the factors are the rat Type and the experiment (the first and the second study).
+```{r}
+t.test(data12_a$y~data12_a$exp.i, var.equal = TRUE)
+```
+## Infernce: two-way ANOVA
+```{r}
+fit.aov <- aov(data12_a$y~data12_a$exp.i+data12_a$Type)
+summary(fit.aov)
+```
+# ExtraAnalysis
+## Data structure
+- The dataset data3 contains information about the concentration of the drug (the variable x1) in the blood 22.5 min. after the administration of the drug.
+- Create a new dataset which contains the information from data1 and data3 datasets. This dataset should be used for the analysis specified below.
+
+### Reading
+```{r}
+ext.data3 <- read.csv("data/data3.csv")
+```
+### The new dataset
+```{r}
+data13 <- merge(ext.data1, ext.data3, by="ID")
+dim(data13)
+names(data13)
+```
+
+### Visualization
+```{r}
+cor(data13$x1, data13$y)
+plot(data13$x1, data13$y)
+```
+```{r}
+plot(data13$x1, data13$y)
+points(data13$x1[data13$group.y=="A"], data13$y[data13$group.y=="A"], col="red")
+points(data13$x1[data13$group.y=="B"], data13$y[data13$group.y=="B"], col="blue")
+points(data13$x1[data13$group.y=="C"], data13$y[data13$group.y=="C"], col="green")
+
+```
+### Inference
+Calculate the correlation between the concentration of the drug in the blood and the distance traveled by the rat by treatment group.
+```{r}
+cor(data13$x1[data13$group.y=="A"], data13$y[data13$group.y=="A"])
+cor(data13$x1[data13$group.y=="B"], data13$y[data13$group.y=="B"])
+cor(data13$x1[data13$group.y=="C"], data13$y[data13$group.y=="C"])
+```
+Fit a linear regression model in which the distance traveled by the rat is the response and the concentration of the drug in the blood is the prediction.
+```{r}
+fit.lm <- lm(data13$y~data13$x1)
+summary(fit.lm)
+
+```
+Add to the previous model the treatment group as covariate. What is the conclusion.
+```{r}
+
+fit.lm2 <- lm(data13$y~data13$x1+data13$group.x)
+summary(fit.lm2)
+```
+### LRT for the two models
+```{r}
+anova(fit.lm, fit.lm2)
+
+```
+
+

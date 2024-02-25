@@ -1,0 +1,6 @@
+QSocketNotifier: Can only be used with threads started with QThread
+qt.qpa.wayland: Wayland does not support QWindow::requestActivate()
+libpng warning: iCCP: known incorrect sRGB profile
+qt.qpa.wayland: Wayland does not support QWindow::requestActivate()
+qt.qpa.wayland: setGrabPopup called with a parent, QtWaylandClient::QWaylandXdgSurface(0x563ebecb5680) which does not match the current topmost grabbing popup, QtWaylandClient::QWaylandXdgSurface(0x563ebfc4b6c0) According to the xdg-shell protocol, this is not allowed. The wayland QPA plugin is currently handling it by setting the parent to the topmost grabbing popup. Note, however, that this may cause positioning errors and popups closing unxpectedly because xdg-shell mandate that child popups close before parents
+qt.qpa.wayland: Wayland does not support QWindow::requestActivate()

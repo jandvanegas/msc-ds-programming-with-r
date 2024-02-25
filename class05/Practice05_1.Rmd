@@ -1,0 +1,253 @@
+---
+title: "Practice05_1"
+output: pdf_document
+date: "2023-12-20"
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(tidyverse)
+library(ggplot2)
+library(dplyr)
+library(gapminder)
+```
+
+# Practical session 5
+
+## Question 1:
+
+In this question we focus on the airquality data which available as data frame in R. Use help(airquality) to get information about the data. For the analysis in this question, we use only the complete cases in the data
+(observations without missing values).
+
+- How many observations are included in the analysis ?
+```{r}
+airquality.clean <- airquality %>% drop_na()
+dim(airquality)
+dim(airquality.clean)
+```
+- Produce the figure below, use the R function pairs(). 
+```{r}
+pairs(airquality.clean %>% select(Ozone, Solar.R, Wind, Temp))
+```
+- Model 1: fit a linear regression model with the ozone level as an independent variable and the solar radiation as a predictor.
+```{r}
+model1 <- lm(Ozone ~ Solar.R, data = airquality.clean)
+summary(model1)
+```
+Model 2: add the covariate wind speed to the model and use the likelihood ratio test to test of this covariate is needed.
+```{r}
+model2 <- lm(Ozone ~ Solar.R + Wind, data = airquality.clean)
+summary(model2)
+anova(model1, model2)
+```
+- Plot the observed ozone level versus the predicated values of model 1 and model 2 and calculate the correlation between the observed and the predicted data for the two models.
+```{r}
+plot(airquality.clean$Solar.R, model2$fitted.values)
+lines(airquality.clean$Solar.R, model1$fitted.values, col = "red")
+```
+
+```{r}
+cor(airquality.clean$Ozone, model1$fitted.values)
+cor(airquality.clean$Ozone, model2$fitted.values)
+```
+- Model 3: add the covariate temperature to the model. Use the likelihood ratio test to test if the extra co variate is needed and print the estimated model parameters.
+```{r}
+model3 <- lm(Ozone ~ Solar.R + Wind + Temp, data = airquality.clean)
+ll_stats <- anova(model2, model3, test="LRT")
+ll_stats
+
+```
+Res.Df or Residual degrees of freedom is the number of observations minus the number of parameters. The Res.Df for model2 is 108 and for model3 is 107. The difference between the two models is 1. The p-value for the likelihood ratio test is 0.0001. The p-value is less than 0.05, so we reject the null hypothesis that the extra covariate is not needed. The extra covariate is needed.
+
+-  For model 3, produce the diagnostic plots below.
+```{r}
+ggplot() + 
+  geom_point(aes(x=airquality.clean$Ozone, y=model3$fit)) +
+  geom_abline(intercept = 0, slope = 1, color = "red") 
+hist(model3$residuals)
+qqnorm(model3$residuals)
+
+```
+Checking whether the residuals of a statistical model follow a normal distribution is important for several reasons:
+
+Assumption of Linear Regression:
+
+Many statistical techniques, including linear regression, assume that the residuals are normally distributed. Violations of this assumption can affect the validity of statistical inferences and confidence intervals.
+Inference and Hypothesis Testing:
+
+Normality of residuals is often a key assumption for valid hypothesis tests and confidence intervals. If the residuals are not approximately normal, the results of tests and confidence intervals may be less reliable.
+Model Diagnostics:
+
+Examining the distribution of residuals helps diagnose potential issues with the model. Departures from normality might indicate omitted variables, non-linear relationships, or other model misspecifications.
+Robustness of Inferences:
+
+Normality of residuals is desirable for the robustness of statistical tests. When residuals are normally distributed, statistical tests based on them tend to have desirable properties.
+Prediction Intervals:
+
+Normality of residuals is crucial for constructing accurate prediction intervals. If the residuals are not normal, prediction intervals may be biased.
+Interpretability:
+
+When residuals are approximately normally distributed, it simplifies the interpretation of coefficients and other model parameters. Normality allows for straightforward interpretation of confidence intervals as well.
+Outlier Detection:
+
+Normality assumptions are often tied to methods for detecting outliers. Deviations from normality may be indicative of influential outliers.
+Simulation Studies:
+
+Normality assumptions are often made in simulation studies to generate random samples for statistical analyses. Ensuring normality of residuals is important for the validity of such studies.
+Statistical Estimation and Inference Techniques:
+
+Some statistical techniques, such as maximum likelihood estimation, rely on normality assumptions for the validity of estimates and inferential procedures.`
+
+## Question 2:
+
+In this question we focus on the mtcars data which available as data frame in R. Use help(mtcars) to get
+information about the data. The independent variable is the mile per gallon (mpg).
+- Fit a linear regression model in which the predictor is the cars’ weight (wt), print the output.
+```{r}
+model1 <- lm(mpg ~ wt, data = mtcars)
+```
+
+- Use the R function update() to add the factor cylinders (cyl) as a covariate to the model, print the output.
+```{r}
+model2 <- update(model1, . ~ . + cyl)
+```
+
+## Question 3:
+In this question we focus on the mtcars data.
+1. Fit a one way ANOVA model in which the independent variable is mile per gallon (mpg) and the factor is the number of cylinders (cyl), use the R function lm().
+```{r}
+model1 <- lm(mpg ~ cyl, data = mtcars)
+```
+2. Fit a one way ANOVA model in which the independent variable is mile per halon and the factor is the number of cylinders, use the R function aov().
+```{r}
+model2 <- aov(mpg ~ cyl, data = mtcars)
+```
+3. Print the output of both models. The Residual standard error reported in the lm() output is equal to 3.223 where can you find this number in the output obtained from the aov() function ?
+```{r}
+summary(model1)
+print("*********************************")
+summary(model2)
+```
+```{r}
+print(3.206^2)
+
+```
+## Question 4:
+In this question we focus on the chickwts data which available as data frame in R. Use help(chickwts) to get
+information about the data. The independent variable is the chicken weight (weight) and the factor is the
+diet group (feed).
+1. Produce the data frame below (which shows the sample mean and variance per diet group).
+```{r}
+means <- tapply(chickwts$weight, chickwts$feed, mean)
+variances <- tapply(chickwts$weight, chickwts$feed, var)
+df <- data.frame(means, variances)
+df
+```
+- Fit a one way ANOVA model in which the independent variable is weight and the factor is the diet group. Print the output of the model
+```{r}
+model1 <- aov(weight ~ feed, data = chickwts)
+summary(model1)
+
+```
+- Produce all the graphs below.
+```{r}
+ggplot(chickwts, aes(x = weight, y = feed, fill = feed)) + geom_violin()
+```
+```{r}
+ggplot(chickwts, aes(x = weight, y = feed, fill = feed)) + 
+  geom_violin() +
+  geom_jitter(color="black", size=0.75, alpha=0.5)
+```
+```{r}
+ggplot(chickwts, aes(x = weight, y = feed, )) +
+  geom_point(col="red")
+```
+```{r}
+ggplot(chickwts,aes(feed,weight,fill=feed))+geom_boxplot()
+```
+```{r}
+ggplot(chickwts,aes(weight,fill=feed))+geom_density()
+```
+```{r}
+ggplot(chickwts,aes(weight,fill=feed, group=feed))+geom_density(alpha=0.5)+
+  facet_wrap(~feed)
+```
+```{r}
+ggplot(data=chickwts, aes(x=weight, group=feed, fill=feed)) + geom_density(adjust=1.5, position="fill")
+```
+
+## Question 5:
+In this question we focus on the gapminder dataset. To get access to the data you need to install the R package gapminder.
+
+- The first analysis is focus on Afghanistan. Create a new data frame contains only observations from this country and the variables: (1) country (country), (2) year (year), (3)life expectancy (lifeExp) and (4) population size (pop). Produce the following output.
+
+
+```{r}
+head(gapminder)
+```
+
+
+```{r}
+df <- gapminder %>% select(country, year, lifeExp, pop) %>% filter(country == "Afghanistan")
+df
+```
+- Produce the figure below and fit the linear model presented in the figure. Print the parameter estimates of the of the model.
+```{r}
+ggplot(df, aes(x=year, y=lifeExp)) + 
+  geom_point() +
+  geom_smooth(method = "lm", color="red", se = TRUE, fill="#69b3a2")
+```
+- The figure below was produce in order to investigate the relationship between life expectancy and population size and it evolution over the time. Produce the same figure.Hint: https://www.r-graph-gallery.com/connected_scatterplot_ggplot2.html
+```{r}
+library(ggrepel)
+ggplot(df, aes(x=lifeExp, y=pop, label=year)) + 
+  geom_point(color="#69b3a2") +
+  geom_text_repel(data=sample_frac(df, 1)) +
+  geom_segment(color="red", 
+               aes(yend=c(tail(pop, n=-1), NA), xend=c(tail(lifeExp, n=-1), NA)),
+               arrow=arrow(length=unit(0.3, "cm"))
+  )
+  
+
+```
+
+- In this question we focus on observations (from all countries) from 2007. How many observations are included in the analysis ? The investigators are interested to compare the life expectancy between the
+continents. Two figures, presented below, are suggested. Produce the two figures. Which one is better to answer the research question ?
+
+```{r}
+df.2007 <- gapminder %>% filter(year == 2007)
+dim(df.2007)
+```
+```{r}
+ggplot(df.2007, aes(lifeExp, pop, color=continent)) +
+  geom_point(aes(size = pop)) +
+  labs(x = "Life Expectancy", y = "Population", title = "Life Expectancy vs Population", color = "Continent", size = "Population (M)") 
+```
+```{r}
+ggplot(df.2007, aes(lifeExp, continent, =continent)) +
+  geom_violin() +
+  geom_jitter(color="black", size=0.75, alpha=0.5)
+```
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

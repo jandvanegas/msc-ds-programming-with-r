@@ -1,0 +1,1204 @@
+---
+title: 'Programming in R DL'
+subtitle: 'Exam part 1 (15/12/2023)'
+author: 'Juan VANEGAS'
+output: 
+  pdf_document:
+    fig_caption: yes
+    toc: true
+    toc_depth: 2
+  html_document:
+    fig_caption: yes
+    toc: true
+    toc_depth: 2
+    theme: "united"
+  word_document: default
+header-includes:
+    - \usepackage{caption}
+---
+
+
+\captionsetup[figure]{labelformat=empty}
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+knitr::opts_chunk$set(fig.width=6, fig.height=4)
+knitr::opts_chunk$set(warning=FALSE, message=FALSE)
+knitr::opts_chunk$set(fig.path='Figs/')
+
+is_pdf <- try (("pdf_document" %in% rmarkdown::all_output_formats(knitr::current_input())), silent=TRUE)
+is_pdf <- (is_pdf == TRUE)
+```
+
+```{r, warning=FALSE, message=FALSE, echo=FALSE}
+library(tidyverse)
+library(data.table)
+library(gridExtra)
+library(dplyr)
+library(interpretCI)
+library(ggplot2)
+library(ggrepel)
+library(likert)
+library(ggridges)
+library(xlsx)
+library(plotly)
+library(plot3D)
+```
+
+# Introduction
+
+## General information
+
+- Solutions to 20 questions using R in the Programming with R class part of the Msc. of Science in Statistics and Data Science.
+- First part out of three parts of the exam.
+
+\newpage
+
+# Part 1: the <tt>real_data_GDI</tt> data
+In this part of the exam, the questions are focused on the <tt>real_data_GDI</tt> dataset which is a part of the <tt>genderstat</tt> R package. To access the data you need to install the package. More information can be found on https://cran.r-project.org/web/packages/genderstat/index.html. Use the code below to access the data. 
+
+
+```{r, warning=FALSE, message=FALSE}
+library(genderstat)
+data("real_data_GDI")
+names(real_data_GDI)
+```
+
+## Question 1
+1. How many countries are included in the data? Count missing values in each variable in the data.
+2. Create a new data frame without the missing data. How many countries are left in the data?
+3. Calculate the minimum and maximum for the variables life expectancy, mean schooling &
+gni per capita of both male and female.
+4. For each gender, sort the life expectancy of all countries from the highest to the lowest, and print the top country.
+5. For each gender, print the 15 countries with the highest life expectancy.
+6. How many countries have both female and male life expectancy higher than 80?
+7. Show the countries listed in question Q1.6.
+
+
+### Solution 1.1
+```{r}
+q1_1 <- length(unique(real_data_GDI$country))
+paste(q1_1, "countries in the data")
+```
+```{r}
+variables <- names(real_data_GDI)
+print("Missing Values by column")
+q1_1.2 <- real_data_GDI %>% 
+  summarise_all(list(function (x) sum(is.na(x))))
+print(t(q1_1.2))
+```
+
+### Solution 1.2
+```{r}
+q1_2.df <- real_data_GDI %>%
+  filter(complete.cases(.))
+q1_2 <- unique(q1_2.df$country)
+paste(length(q1_2), "countries in the data")
+```
+
+### Solution 1.3
+```{r}
+female.cols <- names(real_data_GDI)[startsWith(names(real_data_GDI), "female")]
+male.cols <- names(real_data_GDI)[startsWith(names(real_data_GDI), "male")]
+functions <- list(min=min, max=max)
+```
+
+#### Male Stats
+```{r}
+q1_2.df %>%
+  select(all_of(male.cols)) %>%
+  summarise_all(list(min=min, max=max))
+```
+#### Female Stats
+```{r}
+q1_2.df %>%
+  select(all_of(female.cols)) %>%
+  summarise_all(list(min=min, max=max))
+```
+
+### Solution 1.4
+```{r}
+sort.and.top <- function(df, index, col, top=5){
+  return (df %>%
+    select(all_of(c(index, col))) %>%
+    arrange_at(col, desc) %>%
+    head(n=top)
+    )
+}
+```
+
+#### Male top life expectancy
+```{r}
+sort.and.top(q1_2.df, "country", "male_life_expectancy", 1)
+```
+
+#### Female top life expectancy
+```{r}
+sort.and.top(q1_2.df, "country", "female_life_expectancy", 1)
+```
+
+### Solution 1.5
+
+#### Male top 15 life expectancy
+```{r}
+sort.and.top(q1_2.df, "country", "male_life_expectancy", 15)
+```
+
+#### Female top 15 life expectancy
+```{r}
+sort.and.top(q1_2.df, "country", "female_life_expectancy", 15)
+```
+### Solution 1.6
+```{r}
+q1_6.df <- q1_2.df[q1_2.df$female_life_expectancy > 80 & q1_2.df$male_life_expectancy > 80, ] %>%
+  select(country)
+```
+
+### Solution 1.7
+```{r}
+print(q1_6.df)
+```
+
+
+
+## Question 2
+
+In this question, we use the dataset that was created in Q1.2 (the dataset without the missing values).
+
+1. Define a new categorical variable <tt>flife_cat</tt> in the following way: Re-code the variable <tt>female_life_expectancy</tt> into three categories:
+
+    female_life_expectancy <60: Low.\
+    female_life_expectancy 60-80: Medium.\
+    female_life_expectancy >80: High.
+
+Count how many countries are included in each category.
+
+2. Produce the pie plot and the barplot in a figure with one row of two panels, as presented in Figure 2.1.
+3. Define a new dataset in which you include the countries for which female are classified with low life expectancy. Sort the data by male life expectancy and print the top 3 countries.
+4. For the dataset in Q2.3, calculate the mean and standard deviation of male life expectancy and produce the output below.
+
+### Solution 2.1
+```{r}
+categorize.life_exp <- function(row) {
+  if (row < 60) return("Low")
+  if (row <= 80) return("Medium")
+  else return("High")
+}
+q2_1.df <- q1_2.df %>%
+  mutate(flife_cat = factor(mapply(categorize.life_exp, female_life_expectancy), levels = c("Low", "Medium", "High"))) %>%
+  group_by(flife_cat) %>%
+  mutate(N = n()) %>%
+  ungroup()
+
+q2_1.2.df <- q2_1.df %>% 
+  select(flife_cat, N) %>%
+  distinct()
+  
+```
+
+### Solution 2.2
+
+```{r fig.cap = "Figure 2.1"}
+p1 <- ggplot(q2_1.2.df, aes(x="", y=N, fill=flife_cat, label=N)) +
+  geom_col(width=1, color="black") +
+  geom_text(position = position_stack(vjust=0.5)) +        
+  coord_polar(theta="y", direction = 1) +
+  labs(fill="Category") +
+  theme_void()
+  
+p2 <- ggplot(q2_1.2.df, aes(x=flife_cat, y=N, fill=flife_cat, label=N)) +
+  geom_bar(stat="identity", color="black") +
+  geom_text(vjust=-0.25) +        
+  labs(fill="Category") +
+  theme_void()
+  
+grid.arrange(p1, p2, ncol=2)
+```
+
+### Solution 2.3
+```{r}
+q2_3.df <- q2_1.df %>%
+  filter(flife_cat=="Low")
+res <- q2_3.df %>%
+  select(country, male_life_expectancy) %>%
+  arrange(-male_life_expectancy) %>%
+  slice_head(n=3)
+print(res)
+```
+
+### Solution 2.4
+4. For the dataset in Q2.3, calculate the mean and standard deviation of male life expectancy and produce the output below.
+```{r}
+q2_3.df %>%
+  summarise(mean_expectancy=mean(male_life_expectancy), sd_expectancy=sd(male_life_expectancy)) %>%
+  select(mean_expectancy, sd_expectancy)
+  
+```
+
+
+## Question 3
+
+In this question we use the <tt>real_data_GDI</tt> dataset without the missing values. 
+
+1. Create a new data frame for countries with male life expectancy is higher than 53. How many countries are included in the new data set?
+2. For the new dataset, calculate a 95% confidence interval for the female life expectancy using a standard normal distribution. Note that you need to program the formula for the confidence interval by yourself.
+3. Write a function that receives a numerical vector and produces as a numerical output 95% confidence interval and the mean of numerical vector. Inside your function, use the R function <tt>t.test()</tt> to calculate the confidence interval and the mean. Apply this function to female life expectancy in the new data defined in Q3.1.
+4. Use the R package <tt>interpretCI</tt> (and the <tt>meanCI()</tt> function) to calculate the confidence interval for the female life expectancy using a standard normal distribution in the new dataset defined in Q3.1.
+
+
+### Solution 3.1
+```{r}
+q3_1.dt <- q1_2.df %>%
+  filter(male_life_expectancy > 53)
+paste(nrow(q3_1.dt)) 
+```
+
+### Solution 3.2
+```{r}
+data <- q3_1.dt$female_life_expectancy
+n <- nrow(q3_1.dt)
+u <- mean(data)
+z <- qnorm(0.975)
+ci <- c(lower=u - z * sd(data / sqrt(n)), upper=u + z * sd(data / sqrt(n)), mean=u)
+ci
+```
+
+### Solution 3.3
+```{r}
+q3_3.f <- function(x) {
+  x.test <- t.test(x, conf.level=0.95)
+  return(c(x.test$conf.int, x.test$estimate))
+}
+q3_3.f(q3_1.dt$female_life_expectancy)
+```
+
+### Solution 3.4
+```{r}
+q3_4 <- interpretCI::meanCI(q3_1.dt$female_life_expectancy)$result
+res <- c(lower=q3_4$lower, upper=q3_4$upper, mean=q3_4$m)
+res
+```
+
+
+## Question 4
+
+In this question, we use the <tt>real_data_GDI</tt> dataset without the missing values.
+
+1. Produce the scatter plot in Figure 4.1. Note that the countries that are identified on the plot are all classified with low female life expectancy. 
+2. Produce the scatter plot in Figure 4.2.
+3. Calculate the correlation between the variables <tt>female_mean_schooling</tt> and <tt>female_life_expectancy</tt> using the R function <tt>cor.test</tt>.
+4. Fit a linear regression model which includes the mean schooling for female as predictor and the life expectancy for female as dependent variable. Print only coefficients panel (coefficients, standard error, t values and p values).
+5. Produce a scatter plot of the <tt>female_mean_schooling</tt> vs <tt>female_life_expectancy</tt>, and add a regression line as shown in Figure 4.3.
+
+
+### Solution 4.1
+```{r fig.cap = "Figure 4.1"}
+ggplot(q2_1.df, aes(female_mean_schooling, female_life_expectancy, color=flife_cat)) +
+  geom_point() +
+  labs(color="Category") +
+  geom_text_repel(aes(label=ifelse(flife_cat == "Low", country, "")), color="black", vjust=0.2, size=2.5) 
+  
+```
+
+### Solution 4.2
+```{r fig.cap = "Figure 4.2"}
+ggplot(q2_1.df, aes(female_mean_schooling, female_life_expectancy)) +
+  geom_point(aes(color=flife_cat, size=female_gni_per_capita, alpha=0.4)) +
+  labs(color="Category", size="gni per capita") +
+  guides(alpha="none")
+  
+```
+
+### Solution 4.3
+```{r}
+cor <- cor.test(q2_1.df$female_mean_schooling, q2_1.df$female_life_expectancy)
+cor$estimate
+```
+
+### Solution 4.4
+```{r}
+m4_4 <- lm(female_life_expectancy ~ female_mean_schooling, data=q2_1.df)
+summary(m4_4)$coefficients
+```
+
+### Solution 4.5
+```{r fig.cap = "Figure 4.3"}
+ggplot(q2_1.df, aes(female_mean_schooling, female_life_expectancy)) + 
+  geom_point() +
+  geom_smooth(method=lm, se=FALSE, formula = y ~ x) +
+  theme_bw()
+```
+
+
+\newpage
+
+# Part 2 : the <tt>flying</tt> data
+
+For the analysis of this part we use the <tt>flying</tt> data which is a part of the R package <tt>dropout</tt>. This is a modified version of the Flying Etiquette Survey data. More information can be found in https://CRAN.R-project.org/package=dropout. The code below can be used to access the data
+
+```{r, warning=FALSE}
+library(dropout)
+data("flying")
+names(flying)
+```
+
+## Question 5
+
+1. Remove the missing values from the data. How many observations remain in the data?  
+2. For the rest of question 5 we use the <tt>flying data</tt> without the missing values. Produce the data frame shown below, which shows the number of respondents for each age and gender category.
+3. Produce the box plot in Figure 5.1.
+4. Use a barplot to visualize the distribution of the gender across the factor levels of the age as shown in Figure 5.2.
+5. Produce plot in Figure 5.3.
+
+
+### Solution 5.1
+```{r}
+flying.df <- data.frame(flying[complete.cases(flying), ])
+nrow(flying.df)
+```
+
+### Solution 5.2
+```{r}
+flying.df %>%
+  select(age, gender) %>%
+  group_by(age, gender) %>%
+  summarize(n=n(), .groups="keep")
+  
+```
+
+### Solution 5.3
+```{r fig.cap = "Figure 5.1"}
+ggplot(flying.df, aes(gender, height, fill=gender)) +
+  geom_boxplot() +
+  geom_jitter(size=0.1) +
+  labs(fill="Gender")
+```
+
+### Solution 5.4
+```{r fig.cap = "Figure 5.2"}
+ggplot(flying.df, aes(age, fill=gender)) +
+  geom_bar(position="dodge")
+```
+
+### Solution 5.5
+```{r fig.cap = "Figure 5.3"}
+degrees.levels <- c("Less than high school degree", 
+             "High school degree",
+             "Some college or Associate degree",
+             "Bachelor degree", 
+             "Graduate degree"
+             )
+age.levels <- c(
+  "18-29",
+  "30-44",
+  "45-60",
+  "> 60"
+)
+flying.df <- flying.df %>%
+  mutate(
+    education = factor(education, levels=degrees.levels),
+    age = factor(age, levels=age.levels)
+    )
+ggplot(flying.df, aes(x = age, fill = gender)) +
+  geom_bar(position = "dodge") +
+  facet_wrap(~education, nrow=1, labeller = label_wrap_gen()) +
+  theme_bw() +
+  labs(x = "Age") +
+  theme(axis.text.x = element_text(angle = 45, vjust = 0.5))
+```
+
+
+## Question 6
+
+In this question, we use the <tt>flying</tt> data without the missing values.
+
+1. Produce the data frame below.
+2. Produce the plot in Figure 6.1.
+3. Count the distribution of the respondents' answers (from each gender and age group) to the question "is it rude to bring a baby on a plane?".
+4. Produce plot in Figure 6.2.
+5. Produce the plot in Figure 6.3 which shows the distribution of the male respondents' answers to 5 questions:
+  * "in general, is it rude to bring a baby on a plane?" (<tt>baby_on_plane</tt>)
+  * "is it rude to ask someone to switch seats with you in order to be closer to family?"       
+      (<tt>switch_for_family</tt>) 
+  * is it rude to move to an unsold seat on a plane?" (<tt>moving_to_unsold_seat</tt>)
+  * "generally speaking, is it rude to say more than a few words to the stranger sitting next to you on a plane?"   
+     (<tt>talking_to_seatmate</tt>)
+  * "is it rude to wake a passenger up if you are trying to walk around?" (<tt>wake_passenger_walk</tt>)
+
+
+### Solution 6.1
+```{r}
+q6_1.df <- flying.df %>%
+  select(gender, baby_on_plane) %>%
+  group_by(gender, baby_on_plane) %>%
+  summarize(n=n(), .groups = "drop_last") %>%
+  mutate(percentage = n / sum(n) * 100)
+q6_1.df
+```
+
+### Solution 6.2
+```{r fig.cap = "Figure 6.1"}
+ggplot(q6_1.df, aes(gender, percentage, fill=baby_on_plane, label=sprintf("%.1f %%", percentage))) +
+  geom_bar(stat="identity") +
+  geom_text(position = position_stack(vjust=0.5)) +
+  theme_bw()
+
+```
+
+### Solution 6.3
+```{r}
+q6_3.df <- flying.df %>%
+  select(age, gender, baby_on_plane) %>%
+  group_by(age, gender, baby_on_plane) %>%
+  summarize(n=n(), .groups = "drop_last") %>%
+  mutate(percentage=n/sum(n) * 100)
+q6_3.df
+```
+
+### Solution 6.4
+```{r fig.cap = "Figure 6.2", fig.fullwidth=TRUE}
+# https://ggplot2.tidyverse.org/reference/labellers.html
+ggplot(q6_3.df, aes(percentage,y="", fill=baby_on_plane)) +
+  geom_col(position = "stack") + 
+  coord_polar(theta="x", direction = 1) +
+  facet_grid(gender~age, labeller = label_both) +
+  geom_label_repel(aes(label=sprintf("%.2f %%", percentage)), size=2.5, nudge_y = 0.8, show.legend = F) +
+  theme(axis.text.x = element_blank(), axis.title.x.bottom = element_blank())
+```
+
+### Solution 6.5
+```{r}
+answer_levels = c(
+  "Yes, very rude",
+  "Yes, somewhat rude",
+  "No, not at all rude"
+)
+q6_5.df <- flying.df %>%
+  select(respondent_id, 
+         switch_for_family,
+         talking_to_seatmate, 
+         moving_to_unsold_seat, 
+         baby_on_plane, 
+         wake_passenger_walk, 
+         ) %>%
+  gather("activity", "Response", -respondent_id) %>%
+  group_by(activity, Response) %>%
+  summarise(n=n(), .groups = "drop_last") %>%
+  mutate(percentage=n/sum(n) * 100) %>%
+  mutate(Response = ifelse(Response == "No, not rude at all", "No, not at all rude", Response)) %>%
+  mutate(Response = factor(Response, levels=answer_levels))
+q6_5.manual.plot <- ggplot(q6_5.df, aes(x=percentage, y=activity, fill=Response, )) +
+   geom_bar(stat="identity", width=0.5) +
+   theme_minimal() +
+   theme(legend.position="bottom") +
+   scale_fill_manual(values = c("#5ab4ac", "#e5e5e5", "#d8b365")) +
+   labs(x="Percentage", y="Behavior", fill="Response") +
+   geom_text(aes(label=ifelse(Response == "Yes, somewhat rude", sprintf("%.0f %%", percentage) , "")),
+             position = position_stack(vjust=0.5)) +
+   geom_vline(xintercept = 0)
+```
+```{r fig.cap = "Figure 6.3"}
+answer_levels = c(
+  "No, not at all rude",
+  "Yes, somewhat rude",
+  "Yes, very rude"
+)
+q6_5likert.df <- flying.df %>%
+  select(
+         wake_passenger_walk, 
+         baby_on_plane, 
+         moving_to_unsold_seat, 
+         talking_to_seatmate, 
+         switch_for_family,
+         ) %>%
+  mutate(moving_to_unsold_seat = ifelse(moving_to_unsold_seat == "No, not rude at all", "No, not at all rude", moving_to_unsold_seat)) %>%
+  mutate_all(function(x) factor(x, levels=answer_levels))
+p <- likert(data.frame(q6_5likert.df))
+a <- likert.bar.plot(p, legend.position = "bottom", text.size = 3,
+                     order = F,
+                     group.order = c(
+                       "wake_passenger_walk", 
+                       "baby_on_plane",
+                       "talking_to_seatmate",
+                       "moving_to_unsold_seat",
+                       "switch_for_family"
+                       ),
+                     ordered = F)
+plot(a)
+```
+
+## Question 7
+
+In this question we focus on the <tt>flying</tt> data without missing values. 
+
+1. We focus on the variables  <tt>gender</tt> and <tt>baby_on_plane</tt>. Produce the $2X3$ table shown below.
+2. Use a chi-square test to test the hypothesis <tt>gender</tt> and <tt>baby_on_plane</tt> are independent.
+3. Define an R object for the test statistic, plot the density plot of the test statistic under the null hypothesis and add the line for the observed test statistic.
+
+### Solution 7.1
+```{r}
+q7_1.table <- flying.df %>%
+  select(gender, baby_on_plane) %>%
+  table()
+q7_1.table
+```
+
+### Solution 7.2
+```{r}
+q7_2.test <- chisq.test(flying.df$gender, flying.df$baby_on_plane)
+q7_2.test
+```
+
+### Solution 7.3
+```{r fig.cap = "Figure 7.1"}
+q7_3.test.stat <- q7_2.test$statistic
+q7_3.test.df <- q7_2.test$parameter
+q7_3.test.density <- dchisq(q7_3.test.stat, q7_3.test.df)
+label = sprintf("Statistic = %.2f with density %.4f", q7_3.test.stat, q7_3.test.density)
+ggplot() +
+  stat_function(fun=dchisq, args=list(df=q7_3.test.df), color="gray") +
+  xlim(q7_3.test.stat - q7_3.test.stat / 2, q7_3.test.stat + q7_3.test.stat / 2) +
+  geom_vline(xintercept = q7_3.test.stat, color="black") +
+  labs(x="Test statistic", y="Density") +
+  geom_text(aes(x=q7_3.test.stat, y=q7_3.test.density, label=label), hjust=-0, vjust=-1) 
+```
+
+
+## Question 8
+
+Prepare a presentation of 5-10 slides using R markdown about the connection between the <tt>gender</tt> and the variable <tt>baby_on_plane</tt>.  Make sure that your presentation includes:
+
+ * A Title slide.
+ * At least one slide with text.
+ * At least one slide with a figure
+ * At least one slide with text and a figure.
+ 
+Please note that you **WILL NOT** be asked to give the presentation and you **WILL NOT** be asked questions about the presentation. Your aim in this question is to demonstrate that you know how to use R markdown to make a presentation about your analysis. More details how to make a presentation using R markdown: https://rmarkdown.rstudio.com/lesson-11.html.
+
+
+\newpage
+
+# Part 3: the <tt>unemp</tt> data
+
+In this part of the exam, the questions are focused on the <tt>unemp</tt> dataset which is a part of the <tt>viridis</tt> R package. To access the data you need to install the package. More information can be found in https://cran.r-project.org/web/packages/viridis/viridis.pdf. Use the code below to access the data. 
+
+```{r, warning=FALSE, message=FALSE}
+library(viridis)
+data(unemp)
+names(unemp)
+```
+
+## Question 9
+
+For the <tt>unemp</tt> dataset, 
+
+1. How many observations are included in the dataset? How many states are included in this dataset?
+2. How many counties there are in NY?
+3. Create a new data frame named <tt>unemp_NY</tt> for NY state. Produce the following output for the variable <tt>rate</tt>:
+
+### Solution 9.1
+```{r}
+q9_1.n <- nrow(unemp)
+q9_1.n
+length(unique(unemp$state))
+```
+
+### Solution 9.2
+```{r}
+q9_2.counties.ny <- unemp %>%
+  filter(state == "NY") %>%
+  select(county) %>%
+  unique()
+nrow(q9_2.counties.ny)
+```
+
+### Solution 9.3
+```{r}
+unemp_NY <- unemp %>%
+  filter(state == "NY")
+unemp_NY %>%
+  select(rate) %>%
+  summarize(min_rate_NY = min(rate),
+          max_rate_NY = max(rate),
+          mean_rate_NY = mean(rate),
+          )
+```
+
+
+## Question 10
+
+Create a new data frame named <tt>sub_unemp</tt>, which includes data of 3 states: GA, TX and VA.
+```{r}
+sub_unemp <- unemp %>%
+  filter(state %in% c("GA", "TX", "VA"))
+```
+1. How many observations are included in the new data frame?
+2. Produce Figure 10.1 presented below.
+3. Save Figure 10.1, produced in Q10.2, as a png file and include it in the zip file of your solution.
+4. Conduct a t-test to test the hypothesis that the unemployment rate in states TX and VA is equal against a two-sided alternative. What is the value of the test statistic? How many observations were included in the analysis?
+5. Create a new R object that contains the upper and lower limit of the $95\%$ confidence interval for the mean difference. DO NOT use <tt>xxx<-c(-0.2592,0.6928)</tt>.
+6. Test if the variance of the unemployment rate in the two states is equal.
+7. If needed, adjust your analysis in Q10.4 according to the result obtained in Q10.6.
+
+
+### Solution 10.1
+```{r}
+nrow(sub_unemp)
+```
+
+### Solution 10.2
+```{r fig.cap="Figure 10.1"}
+p1 <- ggplot(sub_unemp, aes(x=state, y=rate, color = state)) +
+  geom_boxplot() +
+  theme(legend.position = "bottom")
+p2 <- ggplot(sub_unemp, aes(x=state, y=rate, color = state)) +
+  geom_violin() +
+  theme(legend.position = "bottom")
+layout <- matrix(c(1, 1, 2, 2, NA, 3, 3, NA), nrow = 2, byrow = TRUE)
+p3 <- ggplot(sub_unemp, aes(x=rate, fill=state)) +
+  geom_density(alpha=0.7) +
+  theme(legend.position = "bottom")
+p <- grid.arrange(p1, p2, p3, nrow=2, layout_matrix=layout)
+```
+
+### Solution 10.3
+```{r}
+ggsave("q10_3.png", p)
+```
+
+### Solution 10.4
+4. Conduct a t-test to test the hypothesis that the unemployment rate in states TX and VA is equal against a two-sided alternative. What is the value of the test statistic? How many observations were included in the analysis?
+```{r}
+q10_4.df <- sub_unemp %>%
+  filter(state %in% c("TX", "VA")) %>%
+  select(rate, state)
+q10_4.test <- t.test(rate ~ state, data = q10_4.df, alternative = "two.sided")
+q10_4.test
+```
+
+### Solution 10.5
+```{r}
+q10_5.ci <- q10_4.test$conf.int
+q10_5.ci
+```
+
+### Solution 10.6
+```{r}
+q10_6.test <- var.test(rate ~ state, data = q10_4.df, alternative = "two.sided")
+q10_6.test
+# Manually
+s1_square <- var(sub_unemp %>%
+                  filter(state == "TX") %>%
+                  select(rate))
+s2_square <- var(sub_unemp %>%
+                  filter(state == "VA") %>%
+                  select(rate))
+f.test <- max(s1_square, s2_square)/min(s1_square, s2_square)
+df <- c(nrow(sub_unemp %>%
+              filter(state == "TX") %>%
+              select(rate)) - 1,
+        nrow(sub_unemp %>%
+              filter(state == "VA") %>%
+              select(rate)) - 1)
+q10_6.test <- 2 * pf(f.test, df[1], df[2], lower.tail = FALSE)
+q10_6.test
+
+```
+
+\newpage
+
+# Part 4: the <tt>pigs</tt> data
+
+In this part, the questions are focused on the <tt>pigs</tt> dataset which is a part of the <tt>emmeans</tt> R package. To access the data you need to install the package. More information can be found by help(pigs). You can use the code below to access the data.
+
+```{r, warning=FALSE, message=FALSE}
+library(emmeans)
+data(pigs)
+names(pigs)
+```
+
+## Question 11
+
+In this question, we use the <tt>pigs</tt> dataset without the missing values.
+
+1. Add to the pigs data a category variable <tt>percent_class</tt> that takes the value of "high" when the percent is 18, "moderate" when the percent is 12 or 15, and "low" when the percent is 9. What is the proportion of the pigs for which <tt>percent_class</tt> is high? Produce the plot presented in Figure 11.1.
+2. For the new data, compute summary statistics (count, mean, sd) of the concentration of free plasma leucine (the variable <tt>conc</tt>) by the variable <tt>percent_class</tt>.
+3. Use the function <tt>aov()</tt> to fit a one-way ANOVA model in which the concentration of free plasma leucine (the variable <tt>conc</tt>) is the independent variable and the protein percentage in the diet (<tt>percent_class</tt>) is the factor.
+4. Print the ANOVA table for the model.
+5. Create a new R object, <tt>F.value</tt>, that contains the value of the F test statistics. DO NOT use <tt>F.value=1.858</tt>.
+6. Produce the diagnostic plots (qq normal plot for residuals and histogram for residuals) presented in Figure 11.2 and 11.3 below.
+
+
+### Solution 11.1
+```{r}
+levels = c("low", "moderate", "high")
+pigs.df <- pigs[complete.cases(pigs), ]
+q11_1.f <- function(x) {
+  if (x == 18) return ("high")
+  else if (x == 12 || x == 15) return ("moderate")
+  else if (x == 9) return ("low")
+}
+pigs.df <- pigs.df %>%
+  mutate(percent_class = factor(lapply(percent, q11_1.f), levels = levels))
+
+q11_1.ratio <- nrow(pigs.df[pigs.df$percent_class == "high",])/nrow(pigs.df)
+q11_1.ratio
+```
+```{r fig.cap="Figure 11.1"}
+q11_1.df <- pigs.df %>%
+  group_by(source, percent_class) %>%
+  summarize(n = n(), .groups = "drop_last") %>%
+  mutate(percentage_by_source = 100 * n/sum(n))
+
+ggplot(q11_1.df, aes("", percentage_by_source, fill=percent_class, label=
+                       ifelse(source=="skim", sprintf("%.2f %%", percentage_by_source),
+                              sprintf("%.0f %%", percentage_by_source)))) +
+  geom_col() +
+  coord_polar(theta = "y", direction = 1) +
+  theme_grey() +
+  scale_fill_grey() +
+  geom_label_repel(size = 4, show.legend = F, position = position_stack(vjust=0.5), color="white") +
+  facet_wrap(~source, labeller = label_both) +
+  theme(axis.text.x = element_blank(), 
+        axis.title.x.bottom = element_blank(),
+        axis.title.y.left = element_blank(),
+        panel.grid = element_blank()
+        )
+```
+
+### Solution 11.2
+```{r}
+pigs.df %>%
+  group_by(percent_class) %>%
+  summarize(count = n(), mean = mean(conc), sd = sd(conc))
+```
+
+### Solution 11.3
+```{r}
+q11_3.model <- aov(conc ~ percent_class, data = pigs.df)
+```
+
+### Solution 11.4
+```{r}
+summary(q11_3.model)
+```
+
+### Solution 11.5
+```{r}
+q11_5.f <- summary(q11_3.model)[[1]][["F value"]][[1]]
+q11_5.f
+```
+
+### Solution 11.6
+```{r fig.cap="Figure 11.2"}
+ggplot(q11_3.model, aes(sample = residuals(q11_3.model))) +
+  stat_qq() +
+  stat_qq_line() +
+  labs(x = "Theoretical Quantiles", y = "Sample Quantiles")
+```
+```{r fig.cap="Figure 11.3"}
+ggplot(q11_3.model, aes(x = residuals(q11_3.model))) +
+  geom_histogram(bins = 10, color = "black", fill = "lightblue") +
+  labs(x = "Residuals", y = "Frequency")
+```
+
+
+\newpage
+
+# Part 5: the <tt>fish</tt> data
+
+In this part we use the data <tt>fish</tt> which is a part of the <tt>rrcov</tt> R package. To access the data you need to install the package. More information can be found in https://search.r-project.org/CRAN/refmans/rrcov/html/fish.html. You can use the code below to access the data.
+
+```{r, warning=FALSE, message=FALSE}
+library(rrcov)
+data(fish)
+names(fish)
+```
+
+
+## Question 12
+
+In this question we use the <tt>fish</tt> dataset WITH the missing values.
+
+1. Produce a frequency table for the number fish for each  species.
+2. Observation 14 has a missing value in variable Weight. Remove this observation from the data and create a new dataset, <tt>fish2</tt>. Use the new dataset to create a bar plot for the weight by species as shown in Figure 12.1.
+3. For the new dataset created in Q12.2, produce Figure 12.2, a scatter plot for Width vs. Weight by Species. 
+
+### Solution 12.1
+```{r}
+q12_1.df <- fish %>%
+  group_by(Species) %>%
+  summarize(n = n())
+q12_1.df
+```
+
+### Solution 12.2
+```{r fig.cap="Figure 12.1"}
+fish2 <- fish[-14, ] # Or better fish2 <- fish[!is.na(fish$Weight), ]
+ggplot(fish2, aes(x = Species, y = Weight, fill = as.factor(Species))) +
+  geom_bar(stat = "identity") +
+  scale_fill_manual(values = c("lightblue", "orange", "green", "blue", "red", "yellow", "pink")) +
+  labs(x = "Species", y = "Weight")
+
+```
+
+### Solution 12.3
+```{r fig.cap="Figure 12.2"}
+ggplot(fish2, aes(x = Weight, y = Width)) +
+  geom_point(size = 1) +
+  facet_wrap(~Species, ncol = 3, scales = "free")
+```
+
+
+## Question 13
+
+For the new dataset defined in Q12.2.
+
+1. Use a for loop to calculate the correlation between <tt>Weight</tt> and <tt> Width</tt> for each species. This implies that for each step in the for loop another species will be selected and the correlation between <tt>Weight</tt> and <tt> Width</tt> will be calculated and printed.
+2. Produce the following output WITHOUT using a for loop. Note that the variable <tt>Correlation</tt> is the correlation between <tt>Weight</tt> and <tt> Width</tt>.
+
+### Solution 13.1
+```{r}
+# ini
+q13.1.vector <- data.frame(Species = character(), Correlation = numeric())
+for (i in unique(fish2$Species)) {
+  # append a new record to the dataset
+  cor.i <- cor(fish2$Weight[fish2$Species == i], fish2$Width[fish2$Species == i])
+  r.i <- data.frame(Species = i, Correlation = cor.i)
+  q13.1.vector <- rbind(q13.1.vector, r.i)
+}
+q13.1.vector
+```
+
+```{r}
+```
+
+### Solution 13.2
+```{r}
+q13.2.vector <- fish2 %>%
+  group_by(Species) %>%
+  summarize(Correlation = cor(Weight, Width)) %>%
+  mutate(Correlation = round(Correlation, 3))
+q13.2.vector
+```
+
+
+## Question 14
+
+1. For the dataset created in Q12.2 calculate the mean for the variables <tt>Weight</tt>, <tt>Length1</tt> and  <tt>Height</tt> by <tt>species</tt> and produce the data frame below.
+2. Save the table that you produce in Q14.1 as an excel file and add this excel file to the zip file with your solutions. 
+
+
+### Solution 14.1
+```{r}
+q14.1.df <- fish2 %>%
+  group_by(Species) %>%
+  summarize(
+    avg_w = round(mean(Weight), 0),
+    avg_L1 = round(mean(Length1), 1),
+    avg_h = round(mean(Height), 1)
+  )
+q14.1.df
+```
+
+### Solution 14.2
+```{r}
+write.xlsx(q14.1.df, "q14.1.xlsx")
+```
+\newpage
+
+# Part 6: the <tt>msleep</tt> data
+
+In this part we use the data <tt>msleep</tt> which is a part of the <tt>ggplot2</tt> R package. To access the data you need to install the package. More information can be found in https://github.com/tidyverse/ggplot2/blob/main/data-raw/msleep.csv. You can use the code below to access the data.
+
+
+```{r}
+library(dplyr)
+data("msleep", package = "ggplot2")
+head(msleep, 5)
+```
+
+## Question 15
+1. How many observations and variables are included in the data?
+2. Create a summary table of average sleep time (the variable <tt>sleep_total</tt>) for each level of the variable <tt>order</tt>, sorted in descending order of average sleep time. 
+
+
+
+### Solution 15.1
+```{r}
+nrow(msleep)
+```
+### Solution 15.2
+```{r}
+q15.2.df <- msleep %>%
+  group_by(order) %>%
+  summarize(avg_sleep = round(mean(sleep_total), 2)) %>%
+  arrange(desc(avg_sleep))
+q15.2.df
+```
+
+## Question 16
+
+1. For the <tt>msleep</tt> dataset, produce Figure 16.1 to visualize the relationship between the <tt>bodywt</tt> and <tt>brainwt</tt> variables. Add a regression line to the plot. As shown in Figure 16.1, take key note on the color.
+2. Identify the outlying observations for which the body weight (the variable <tt>bodywt</tt>) is higher than 2000. Add the value of the body weight to the figure (inside the frame) as shown in Figure 16.2.
+3. Create a new data frame without the two outlying observations. Produce the scatterplot shown in Figure 16.3.
+
+
+### Solution 16.1
+
+```{r fig.cap="Figure 16.1"}
+q16_1.df <- msleep %>%
+  filter(!is.na(bodywt) & !is.na(brainwt)) %>%
+  mutate(pred = lm(brainwt ~ bodywt)$fitted.values)
+
+ggplot(q16_1.df, aes(x = bodywt, color = bodywt)) +
+  geom_point(aes(y = brainwt)) +
+  geom_line(aes(y = pred)) +
+  labs(x = "Body Weight", y = "Brain weight") +
+  labs(title = "Scatter Plot of Body Weight and Brain Weight", color="Body Weight") +
+  theme_bw()
+  
+```
+
+### Solution 16.2
+```{r fig.cap="Figure 16.2"}
+q16_2.df <- q16_1.df %>%
+  filter(bodywt > 2000)
+
+ggplot(q16_1.df, aes(x = bodywt, color = bodywt)) +
+  geom_point(aes(y = brainwt)) +
+  geom_line(aes(y = pred)) +
+  labs(x = "Body weight", y = "Brain weight") +
+  labs(title = "Scatter Plot of Body Weight and Brain Weight", color="Body Weight") +
+  geom_text(data = q16_2.df, aes(x = bodywt, y=brainwt, label = bodywt), hjust = 0.5, vjust = -0.5) +
+  theme_bw()
+  
+```
+
+### Solution 16.3
+```{r fig.cap="Figure 16.3"}
+q16_3.df <- msleep %>%
+  filter(!is.na(bodywt) & !is.na(brainwt)) %>%
+  filter(bodywt < 2000) %>%
+  mutate(pred = lm(brainwt ~ bodywt)$fitted.values)
+
+ggplot(q16_3.df, aes(x = bodywt, )) +
+  geom_point(aes(y = brainwt, color = bodywt)) +
+  geom_smooth(aes(y = brainwt), method = "lm", se = T, formula = y ~ x, linewidth=0) + 
+  geom_line(aes(y = pred, color = bodywt)) +
+  labs(x = "Body weight", y = "Brain weight") +
+  labs(title = "Scatter Plot of Body Weight and Brain Weight", color="Body Weight") +
+  xlim(0, 1000) +
+  theme_bw()
+```
+
+
+
+\newpage
+
+# Part 7: the <tt>ChickWeight</tt> data
+
+In this part we use the <tt>ChickWeight</tt> data which is a part of the <tt>R</tt> datasets. To access the data you need to install the package. More information can be found in https://www.rdocumentation.org/packages/datasets/versions/3.6.2/topics/ChickWeight. You can use the code below to access the data.
+
+```{r}
+data(ChickWeight)
+head(ChickWeight)
+```
+
+
+
+## Question 17 
+
+
+1. Write a function that receives a dataset and a variable as an input and output returns the mean, median, and standard deviation of the variable rounded to 2 decimal places. Apply this function to the <tt>ChickWeight</tt> data and the variable <tt>weight</tt>.
+
+
+
+2. In the output below, both numerical and graphical output were produced using the user function <tt>my.analysis()</tt>. The function receives as an input: (1) a dataset name, (2) the column number of variable 1 (a numerical variable) and (3) the column number of variable 2 (a factor). Note that both variable 1 and variable 2 are a part of the dataset. For the analysis in this question we use the <tt>ChickWeight</tt> dataset at time 0 (so only observations at time 0 are included). The output was produce using the following code: <tt>my.analysis(ChickWeight0,1,4)</tt>.  
+The dataset <tt>ChickWeight0</tt> contains the observations that were measured at time 0. Based on the output below, your task in the question is to write the function <tt>my.analysis()</tt> and to produce the output using the code above. Note that your function should produce an identical output.
+
+
+### Solution 17.1
+```{r}
+q17_1.f <- function(df, variable) {
+  mean <- round(mean(df[[variable]], na.rm = T), 2)
+  median <- round(median(df[[variable]], na.rm = T), 2)
+  sd <- round(sd(df[[variable]], na.rm = T), 2)
+  return(c(mean, median, sd))
+}
+q17_1.f(ChickWeight, "weight")
+```
+
+### Solution 17.2
+```{r}
+my.analysis <- function(df, variable1, variable2) {
+  var1.name <- names(df)[variable1]
+  var2.name <- names(df)[variable2]
+  temp.df <- df %>%
+    mutate_at(var2.name, as.factor) %>%
+    mutate_at(var1.name, as.numeric) %>%
+    group_by_at(var2.name) %>%
+    summarise(mean = mean(.data[[var1.name]], na.rm = T),
+              SD = sd(.data[[var1.name]], na.rm = T),
+              n = n())
+  print("Summary statistics")
+  print(temp.df)
+  var2 <- var2.name
+  model <- aov(df[, var1.name] ~ df[, var2])
+  print("ANOVA table")
+  print(summary(model))
+  print("Sample mean and 95% CI")
+  temp.df <- temp.df %>%
+    mutate(lb = mean - 1.96 * SD / sqrt(n),
+           ub = mean + 1.96 * SD / sqrt(n))
+  p <- ggplot(temp.df, aes(x = factor(Diet), y = mean)) +
+    geom_point(color = "blue", size = 3) +
+    geom_linerange(aes(ymin = lb, ymax = ub), color = "blue") +
+    labs(y = "Weight", x = "Diet", title = "Sample means and 95% CI") +
+    theme_bw()
+  print(p)
+  print("Plot of the Residuals")
+  p <- ggplot() +
+    geom_point(aes(x=model$model[, 2], y =residuals(model)), color = "blue", shape=23, fill="blue", size=2) +
+    labs(x=var2.name, y="Residuals")
+  print(p)
+}
+ChickWeight0 <- ChickWeight %>%
+  filter(Time == 0)
+my.analysis(ChickWeight0, 1, 4)
+
+```
+
+
+## Question 18 
+
+1. Create the boxplot shown in Figure 18.1 to visualize the distribution of weights for each time point in the <tt>ChickWeight</tt> dataset. Color the boxplot based on the <tt>Time</tt> variable.
+
+
+2. Create an **interactive** boxplot, shown in Figure 18.2, to visualize the distribution of weights for each time point in the <tt>ChickWeight</tt> dataset. Color the boxplot based on the <tt>Time</tt> variable.  **DO NOT** include this figure in the PDF document for your answers but ONLY in the HTML document.  
+
+
+### Solution 18.1
+```{r fig.cap="Figure 18.1"}
+q18_1.plot <- ggplot(ChickWeight, aes(x = as.factor(Time), y = weight)) +
+  geom_boxplot(aes(fill = factor(Time)), outlier.shape = NA) +
+  labs(title = "Boxplot of Weight by Time") +
+  theme_bw()
+print(q18_1.plot)
+```
+
+### Solution 18.2
+```{r eval=knitr::is_html_output(), echo=knitr::is_html_output(), fig.cap="Figure 18.2" }
+ggplotly(q18_1.plot)
+```
+
+\newpage
+
+# Part 8: the <tt>Quakes</tt> data
+
+In this part we use the data <tt>quakes</tt> which is a part of the <tt>R</tt> datasets collection. Use <tt>help()</tt> to get more information about the data. More information can be found in https://www.rdocumentation.org/packages/datasets/versions/3.6.2/topics/quakes. You can use the code below to access the data.
+
+```{r}
+library(datasets)
+data("quakes")
+head(quakes)
+```
+
+## Question 19
+
+1. Create the 3D scatter plot presented in Figure 19.1 to illustrate the relationship between latitude (<tt>lat</tt>), longitude (<tt>long</tt>), and depth (<tt>depth</tt>) of earthquakes in the <tt>quakes</tt> dataset.
+2. Create an interactive 3D scatter plot, shown in Figure 19.2, to illustrate the relationship between latitude (`lat`), longitude (`long`), and depth (`depth`) of earthquakes in the `quakes` dataset. **DO NOT** include this figure in the PDF document for your answers but ONLY in the HTML document.
+
+
+
+### Solution 19.1
+```{r fig.cap="Figure 19.1"}
+scatter3D(quakes$long, quakes$lat, quakes$depth, colvar = quakes$mag, pch = 16, ticktype = "detailed", 
+          col = viridis(n=100), size = 0.5, bty = "u", col.axis = "gray", col.grid = "gray", 
+          xlab = "\nX", ylab = "\nY", zlab = "\nZ", cex.axis = 0.6)
+
+```
+
+### Solution 19.2
+```{r eval=knitr::is_html_output(), echo=knitr::is_html_output(), fig.cap="Figure 19.2"}
+plot_ly(quakes, x = ~lat, y = ~long, z = ~depth, type="scatter3d", size=I(100), mode="markers", color=~mag)
+```
+
+
+
+## Question 20
+
+1. Calculate the mean Richter Magnitude (the variable <tt>mag</tt>) by the station (the variable <tt>stations</tt>).
+2. Create a new dataset which contains the observations from the top 25 stations with the highest Richter Magnitude. How many observations are included?
+3. For the new data, define a new variable that is equal to the ratio between Richter Magnitude and the depth, i.e., 
+$$ratio=\frac{ Richter Magnitude}{depth}$$.  
+Sort the data according to the variable <tt>ratio</tt>.
+4. Print the three stations with the highest mean ratio.
+5. Create a new dataset for the stations with ratio higher than 0.099. For the new data, produce Figure 20.1. 
+6. For the dataset created in Q20.2 and Q20.3, create a new categorical variable (<tt>mat_cat</tt>) that takes the value of 0 if the Richter Magnitude (the variable <tt>mag</tt>) is below the overall mean and 1 otherwise. Produce Figure 20.2. 
+
+
+### Solution 20.1
+```{r}
+quakes %>%
+  group_by(stations) %>%
+  summarise(mean_mag = mean(mag))
+```
+
+### Solution 20.2
+```{r}
+highest_25 <- quakes %>%
+  group_by(stations) %>%
+  summarise(max_mag = max(mag)) %>%
+  arrange(desc(max_mag)) %>%
+  head(25)
+
+q20_2.df <- quakes %>%
+  filter(stations %in% highest_25$stations) %>%
+  arrange(desc(mag))
+nrow(q20_2.df)
+```
+
+### Solution 20.3
+```{r}
+q20_3.df <- q20_2.df %>%
+  mutate(ratio = mag / depth) %>%
+  arrange(desc(ratio))
+```
+
+### Solution 20.4
+```{r}
+q20_4.df <- q20_3.df %>%
+  group_by(stations) %>%
+  summarise(mean_ratio = mean(ratio)) %>%
+  arrange(desc(mean_ratio)) %>%
+  head(3)
+
+print(q20_4.df$stations)
+
+```
+
+### Solution 20.5
+```{r fig.cap="Figure 20.1"}
+q20_5.df <- q20_3.df %>%
+  filter(ratio > 0.099)
+ggplot(q20_5.df, aes(x = ratio, y = depth)) +
+  geom_point() +
+  labs(title = "Boxplot of Ratio by Station") +
+  theme_bw()
+```
+
+### Solution 20.6
+```{r fig.cap="Figure 20.2"}
+q20_6.df <- q20_3.df %>%
+  mutate(mat_cat = ifelse(mag > mean(mag), 1, 0))
+ggplot(q20_6.df, aes(x = ratio, y = depth, color = as.factor(stations))) +
+  geom_point() +
+  labs(title = "Boxplot of Ratio by Station") +
+  facet_wrap(~mat_cat, labeller = label_both) +
+  theme_bw()
+```
+
+
+
+

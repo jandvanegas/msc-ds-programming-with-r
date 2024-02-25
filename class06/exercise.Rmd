@@ -1,0 +1,211 @@
+---
+title: "Interactive & Animated Plotting"
+subtitle: "Exercises"
+author: "Ewoud De Troyer"
+# date: "24-10-2020"
+output:
+  html_document:
+    # code_folding: hide
+    number_sections: yes
+    toc: yes
+    toc_float: yes 
+    collapsed: false
+    smooth_scroll: false
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+
+```{r loadPackages, include=FALSE}
+# install.packages("gifski") # Make sure the gifski package is installed as well. It creates a gif out of the frames gganimate produces
+
+library(ggplot2)
+library(plotly)
+library(tidyr)
+library(dplyr)
+library(gganimate)
+library(gridExtra)
+library(cowplot)
+
+library(COVID19) # To download data
+
+```
+
+
+
+# Data
+
+World-wide Covid-19 data will be downloaded using the `COVID19` R package. This package is able to download COVID-19 data across governmental sources at national, regional, and city level, as described in Guidotti and Ardia (2020) (https://doi.org/10.21105/joss.02376). It also includes policy measures by 'Oxford COVID-19 Government Response Tracker' (https://www.bsg.ox.ac.uk/research/covid-19-government-response-tracker)
+
+For more info on this unified dataset, visit their data hub (https://covid19datahub.io/).
+
+
+```{r getData, message=FALSE, warning=FALSE}
+# Get COVID19 data from Belgium at national level
+data1 <- covid19(country=c("Belgium"),start="2020-03-01", verbose=FALSE)
+data1 <- data1[data1$date<=(Sys.Date()-2),] # Remove last 2 days, may still be incomplete
+data1 <- data1 %>% arrange(date) %>% group_by(administrative_area_level_1) %>% mutate(confirmed_daily=c(data1$confirmed[1],diff(confirmed))) %>% ungroup() # Add daily confirmed cases
+
+
+# Get COVID19 data from Belgium at regional level
+data2 <- covid19(country=c("Belgium"),start="2020-03-01",level=2, verbose=FALSE)
+data2 <- data2[data2$date<=(Sys.Date()-2),] # Remove last 2 days, may still be incomplete
+data2 <- data2[data2$administrative_area_level_2!="Ostbelgien",] # We remove the Ostbelgien entries since they do not contain the number of confirmed cases or number of hospitalisations
+
+# Get COVID19 data from multiple countries at national level
+data3 <- covid19(country=c("Belgium","CZE","Netherlands","France","Germany","United Kingdom"),start="2020-03-01", verbose=FALSE)
+data3 <- data3[data3$date<=(Sys.Date()-2),] # Remove last 2 days, may still be incomplete 
+
+
+# In case the code above fails to download the data, please load a pre-downloaded version here:
+# load(".../data/covid19_belgium.RData")
+```
+
+The covid19 datasets contain a lot of information such as:
+
+* confirmed cases (`confirmed`)
+* number of deaths (`deaths`)
+* number of hospitalized patients (`hosp`)
+* The level at which the numbers were recorded
+    + `administrative_area_level_1` for `data1`
+    + `administrative_area_level_2` for `data2`
+* population size of `administrative_area_level_1` or `administrative_area_level_2` (`population`)
+* numerous restrictions (`school_closing`, `cancel_events`,`gathering_restrictions`,...)
+    + more info on the meaning of the restriction levels can be found at https://github.com/OxCGRT/covid-policy-tracker/blob/master/documentation/codebook.md#containment-and-closure-policies
+* number of recovered cases (`recovered`)
+* ...
+
+```{r showData}
+str(data2)
+```
+
+**Tip:** for the exercises below, most of the time you will be provided with the necessary functions. If you are stuck, don't be afraid to google your problem/question and skim through stackoverflow!
+
+# Exercises: `ggplot`
+
+## Exercise 1 {-}
+
+Use `data1` to visualize the daily confirmed cases in Belgium over time with a *colored* line. Also make sure all months (with year) appear on the x-axis and give the graph a title.
+
+* **Data:** `data1`
+* **Variables of interest:** `date`, `confirmed_daily`, `administrative_area_level_1`
+* **Functions/tips**: `geom_line`, `scale_x_date`,`geom_smooth`
+
+
+```{r exercise1_solution1, fig.width=8}
+# Enter your solution here
+
+
+```
+
+
+You will see that the line of confirmed daily cases jumps up and down consistently due to a *weekend effect*. Add a smooth line through these data points instead. (**Tip:** a span of 0.1 for *loess* gives a good result)
+
+```{r exercise1_solution2, fig.width=8}
+# Enter your solution here
+
+
+```
+
+Finally, use your previous code to make 2 plots: one with the line fitting the data directly and one with the smoothed line. Combine these plots into a single plot grid using either the `gridExtra` or `cowplot`package.
+
+```{r exercise1_solution3, fig.width=14}
+# Enter your solution here
+
+
+```
+
+
+
+## Exercise 2 {-}
+
+For this and all following exercises you will be using `data2`. Visualize the number of hospitalizations over time in the 3 main regions of Belgium. Make sure the 3 regions are separated in 3 facets and give each line (for each region) a manual color! (pick your favorite colors)
+
+* **Data:** `data2`
+* **Variables of interest:** `date`, `hosp`, `administrative_area_level_2`
+* **Functions/tips**: `geom_line`, `facet_wrap`, `scale_color_manual`
+
+
+```{r exercise2_solution1, fig.width=10}
+# Enter your solution here
+
+
+```
+
+Change your coloring variable to `gatherings_restrictions`. Make sure discrete colors are used and not a gradient! Also make sure that you obtain a single line with multiple colors and not multiple lines with a single color.
+If you are interested in what the multiple level of restrictions mean, check out https://github.com/OxCGRT/covid-policy-tracker/blob/master/documentation/codebook.md#containment-and-closure-policies .
+(**Tip:** `group=1`)
+
+
+```{r exercise2_solution2, fig.width=10}
+# Enter your solution here
+
+
+```
+
+
+# Exercises: `plotly`
+
+## Exercise 3 {-}
+
+
+
+For this visualization first recreate a similar plot as in exercise 2 (you should be able to recycle most of your earlier code). However this time, color by region, do not use facets, and make sure the y-axis shows number of hospitalizations over the regional population size. The latter makes the values more comparable between regions.
+
+* **Data:** `data2`
+* **Variables of interest:** `date`, `hosp`, `administrative_area_level_2`, `population`
+* **Functions/tips**: `geom_line`, `ggplotly`
+
+
+
+```{r exercise3_solution1, fig.width=10}
+# Enter your solution here
+
+
+```
+
+
+Now transform your ggplot in an interactive plot and add the following additional tooltips: (1) Total number of hospitalizations, (2) regional population size, (3) any other number of variables that are of interest to you (e.g. restrictions)
+(**Tip: ** `group=administrative_area_level_2`)
+
+
+```{r exercise3_solution2, fig.width=10}
+# Enter your solution here
+
+
+```
+
+# Exercises: `gganimate`
+
+## Exercise 4 {-}
+
+Use the static plot of exercise 3 and animate it however you see fit following one of the approaches in the course slides. You do not need to stick to the line plot.
+
+* **Data:** `data2`
+* **Variables of interest:** `date`, `hosp`, `administrative_area_level_2`, `population`
+* **Functions/tips**: `geom_line`, `geom_point`, `transition_reveal`, `transition_time`, `transition_states`
+
+
+```{r exercise4_solution1, fig.width=10, warning=FALSE}
+# Enter your solution here
+
+
+```
+
+
+# Bonus Exercise
+
+From scratch, use `data3` to create a plot that shows the **deaths per 100.000 people for every week** over time for all of the included countries (Belgium, Czech Republic, France, Germany, Netherlands, United Kingdom). Either make this plot interactive by adding tooltips or animate with your favorite animation.  
+You will need to do some data manipulation to add the daily deaths and the weekly deaths per 100.000. If you get stuck here, don't be afraid to head over to your best friend google/stackoverflow to find an easy/creative solution.
+
+
+
+
+```{r exercisebonus_solution, message=FALSE, warning=FALSE, fig.width=10}
+# Enter your solution here
+
+
+```
+

@@ -1,0 +1,459 @@
+---
+title: "Practice03"
+output: pdf_document
+date: "2023-12-17"
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(NHANES)
+library(ggplot2)
+```
+
+
+# Practical session 1: sampling from a population
+
+## The mean and variance weight in the population
+
+- Calculate the mean, median and the variance of the weight (the R object Weight).
+
+
+```{r}
+paste("mean", mean(na.omit(NHANES$Weight)))
+paste("median", median(na.omit(NHANES$Weight)))
+paste("var", var(na.omit(NHANES$Weight)))
+```
+
+## The sample mean and variance of weight
+- Draw 5 samples of size 500 from the population. For each sample, calculate the mean and the variance and plot the histogram for the sample.
+- Use the R function qqnorm to check if the distribution of the variable weight in the sample follows a normal distribution.
+```{r}
+for (i in 1:5) {
+  i.sample <- sample(NHANES$Weight, 500)
+  i.mean <- mean(na.omit(i.sample))
+  i.var <- var(na.omit(i.sample))
+  hist(i.sample) 
+  text(150, 90, paste("mean", i.mean))
+  text(150, 70, paste("var", i.var))
+  qqnorm(i.sample)
+  qqline(i.sample)
+}
+```
+
+## Correlation
+- Calculate the population correlation between the variables weight and height (the R objects Weight and Height). 
+```{r}
+cor(NHANES$Weight, NHANES$Height, use = "na.or.complete")
+```
+
+- Draw 5 samples of weight and height (size 100) from the population and calculate the sample correlation.
+- Produce a scatterplot, per sample, for weight Vs. height.
+```{r}
+for (i in 1:5) {
+  i.sample <- NHANES[sample(nrow(NHANES), 100), ]
+  i.cor <- cor(i.sample$Weight, i.sample$Height, use = "na.or.complete")
+  print(ggplot(i.sample, aes(x = Weight, y = Height)) +
+    geom_point(na.rm = T) +
+    geom_text(x = 150, y = 180, label = paste("cor", i.cor)))
+}
+```
+
+## BMI
+The BMI is define as: MBI = weight / height^2
+- Calculate the individual MBI in the 5 samples and plot the subjects’ BMI versus the subjects’ age.
+
+```{r}
+for (i in 1:5) {
+  i.sample <- NHANES[sample(nrow(NHANES), 100), ]
+  i.sample$mbi <- i.sample$Weight / i.sample$Height^2
+  print(ggplot(i.sample, aes(x = Age, y = mbi)) +
+    geom_point(na.rm = T)
+  )
+}
+```
+
+# Practical session 2: probability
+Solve the following questions using R:
+- Let X be a random variable, X ∼ B(10, 0.3). Calculate the probability P (X < 3) , P (5 < X < 9).
+```{r}
+pbinom(2, 10, 0.3)
+pbinom(8, 10, 0.3) - pbinom(4, 10, 0.3)
+```
+- Plot the densities (in one figure) for N (0, 1) and N (2, 1) .
+```{r}
+x <- seq(-5, 5, 0.01)
+y1 <- dnorm(x, 0, 1)
+y2 <- dnorm(x, 2, 1)
+plot(x, y1, type = "l", col = "red")
+lines(x, y2, col = "blue")
+```
+
+- Plot the densities (in one figure) for N (0, 1) and N (0, 2) .
+```{r}
+x <- seq(-5, 5, 0.01)
+y1 <- dnorm(x, 0, 1)
+y2 <- dnorm(x, 0, 2)
+plot(x, y1, type = "l", col = "red")
+lines(x, y2, col = "blue")
+```
+- Calculate the probability function for a random variable X ∼ B(2, 0.5).
+```{r}
+dbinom(0:2, 2, 0.5)
+```
+- Let X be a random variable, $X ~ Poisson(3) $. Calculate the probability P (X < 4) .
+```{r}
+ppois(3, 3)
+```
+- Draw a random sample of 55 observations form P (3) , calculate the mean and variance of the sample.
+```{r}
+sample <- rpois(55, 3)
+mean <- mean(sample)
+var <- var(sample)
+paste("mean", mean)
+paste("var", var)
+```
+
+- Let X be a random variable, X ∼ N (1, 2), calculate the probability P (X ≤ 0) .
+```{r}
+pnorm(0, 1, 2)
+```
+
+- Let X be a random variable, X ∼ N (0, 1), calculate the probability P (X ≤ 0) .
+```{r}
+pnorm(0, 0, 1)
+```
+
+- Let X1 , ... , X10 be a random sample from N (10, 1) and let X̄ be the sample mean. Calculate the probability that P (X̄ ≤ 9) and the probability that P (X ≤ 9).
+
+```{r}
+
+sigma <- 1
+n <- 10
+p_x_bar_sd <- sigma / sqrt(n)
+p_x_bar_less_than_9 <- pnorm(9, 10, p_x_bar_sd)
+print(paste("P(X_bar <= 9)", p_x_bar_less_than_9))
+
+p_x_less_than_9 <- pnorm(9, mu, sigma)
+print(paste("P(X <= 9)", p_x_less_than_9))
+```
+
+- Draw a random sample of 1000 observations from N (10, 1) . Calculate the sample mean. What is the proportion of observations smaller than 9 ? Plot a histogram of the sample.
+```{r}
+sample <- rnorm(1000, 10, 1)
+sample.mean <- mean(sample)
+sample.less_than_nine <- sample[sample < 9]
+sample.less_than_nine.prop <- length(sample.less_than_nine) / length(sample)
+hist(sample)
+```
+## Practical session 3: basic Graphical displays
+In this question we use the NHANES dataset, the R object NHANES. Use the basic graphical functions in R produce the following plots:
+- Histogram for the BMI.
+```{r}
+hist(NHANES$BMI)
+```
+- scaterplot of the BMI versus age.
+```{r}
+plot(NHANES$Age, NHANES$BMI)
+```
+
+- scaterplot of the BMI versus age in which the individuals with Diabetes and without Diabetes are plotted in different colors.
+```{r}
+plot(NHANES$Age, NHANES$BMI, col = NHANES$Diabetes)
+```
+
+- Boxplot of age across the level of the factor Diabetes.
+```{r}
+boxplot(NHANES$Age ~ NHANES$Diabetes)
+```
+
+- Normal probability plot for height.
+```{r}
+qqnorm(NHANES$Height)
+qqline(NHANES$Height)
+```
+
+- Normal probability plot for weight (wi ) by Diabetes status (in one page).
+```{r}
+par(mfrow = c(1, 2))
+qqnorm(NHANES$Weight[NHANES$Diabetes == "Yes"], main = "Diabetes")
+qqline(NHANES$Weight[NHANES$Diabetes == "Yes"])
+qqnorm(NHANES$Weight[NHANES$Diabetes == "No"], main = "No Diabetes")
+qqline(NHANES$Weight[NHANES$Diabetes == "No"])
+```
+
+Define the z-scores for the weight by $z_i = (w_i − \bar{w}) / sd(w_i)$. Calculate the mean and variance of zi and plot the normal probability plot for z_i.
+```{r}
+clean.data <- NHANES[complete.cases(NHANES[, c("Weight", "Height")]), ]
+z <- (clean.data$Weight - mean(clean.data$Weight)) / sd(clean.data$Weight)
+z.mean <- mean(z, na.rm = T)
+z.var <- var(z, na.rm = T)
+print(paste("mean", z.mean))
+print(paste("var", z.var))
+qqnorm(z, main = "z")
+qqline(z)
+```
+## Practical session 4: two samples t-test
+In this question we use the NHANES dataset (the R object NHANES).
+- Use a two-sample t-test to test the null hypothesis that the BMI of Diabetes patients is equal to the BMI of non Diabetes patients against two sided alternative. Assume that the variance in equal in the two groups.
+```{r}
+t.test(BMI ~ Diabetes, data = NHANES, var.equal = T)
+```
+- Use a graphical display to visualize the distribution of the BMI for Diabetes and non Diabetes patients.
+```{r}
+boxplot(BMI ~ Diabetes, data = NHANES)
+```
+
+- Calculate the mean BMI by Diabetes status.
+```{r}
+tapply(NHANES$BMI, NHANES$Diabetes, mean, na.rm = T)
+```
+
+## Practical session 5: One-way ANOVA
+*The Motor Trend Car Road dataset (mtcars)*
+In this question we use the Motor Trend Car Road dataset, the R object mtcars, which is available in R as a data frame. Use help(mtcars) to get more information about the data.
+- Formulate a One-way ANOVA model in which the response variable is mile per gallon and the factor is number of forward gears.
+```{r}
+model <- aov(mpg ~ as.factor(gear), data = mtcars)
+
+```
+
+- Use a graphical display to visualize the distribution of the response across the factor levels.
+```{r}
+boxplot(mpg ~ gear, data = mtcars)
+```
+
+- Calculate overall the mean mile per gallon and across the factor level.
+```{r}
+tapply(mtcars$mpg, mtcars$gear, mean)
+```
+
+- Fit the One-way ANOVA model in R and, use two different functions to fit the model and compare between the output.
+```{r}
+summary(model)
+fit.infer <- lm(mpg ~ as.factor(gear), data = mtcars) 
+summary(fit.infer)
+
+```
+*The NHANES dataset*
+In this question we use the NHANES dataset, the R object NHANES.
+- Formulate a One-way ANOVA model in which the response variable is the income (BMI) and the factor is the education level (Education).
+```{r}
+model <- aov(BMI ~ Education, data = NHANES)
+```
+
+- Use a graphical display to visualize the distribution of the response across the factor levels.
+```{r}
+boxplot(BMI ~ Education, data = NHANES)
+```
+- Calculate mean income in the household for level of education.
+```{r}
+tapply(NHANES$BMI, as.factor(NHANES$Education), mean, na.rm = T)
+```
+
+- Fit the One-way ANOVA model in R. How many individuals were included in the analysis ?
+```{r}
+summary(model)
+```
+
+# Practical session 6: simple linear regression
+*The airquality dataset*
+In this question we use the airquality dataset , the R object airquality , which is available in R as a data frame. Use help(airquality) to get more information about the data.
+- Formulate a simple linear regression model in which the dependent variable in the Ozone level and the predictor is the maximum daily temperature in degrees Fahrenheit at La Guardia Airport.
+```{r}
+model <- lm(Ozone ~ Temp, data = airquality)
+```
+- Produce a scatterplot of the Ozone versus the temperature and calculate the correlation between the two variables.
+```{r}
+plot(airquality$Temp, airquality$Ozone)
+cor <- cor(airquality$Temp, airquality$Ozone, use = "complete.obs")
+text(80, 100, paste("correlation", cor))
+abline(model)
+
+```
+
+- Fit the model in R . Interpret the results.
+```{r}
+summary(model)
+```
+- Do you think that a simple linear regression model is appropriate in this case?
+Yes, because the correlation is high and the p-value is low.
+
+*The NHANES dataset*
+In this question we use the NHANES dataset.
+- Fit a linear regression model for the BMI with age as predictor. Include in the analysis individuals for whom the age is smaller than 40 years old.
+```{r}
+NHANES.less40 <- NHANES[NHANES$Age < 40, ]
+model <- lm(BMI ~ Age, data = NHANES.less40)
+```
+- Produce a scaterplot for the BMI versus the age (for the individuals that were included in the analysis).
+```{r}
+plot(NHANES.less40$Age, NHANES.less40$BMI)
+```
+
+- Plot the data and fitted model.
+```{r}
+plot(NHANES.less40$Age, NHANES.less40$BMI)
+abline(model)
+```
+# Practical session 7: linear regression
+*The Motor Trend Car Road dataset*
+In this question we use the Motor Trend Car Road dataset, the R object mtcars. Use help(mtcars) to get more information about the data.
+- Formulate a linear regression model in which the response variable is mile per gallon and the predictors are the Number of cylinders and the cars weight. Include in the model main effects and interaction.
+```{r}
+fit.1 <- lm(mpg ~ wt * as.factor(cyl), data = mtcars)
+```
+- Fit the model in R and use a F-test to text if the interaction is needed. Interpret the results.
+- Visualize the results.
+```{r}
+fit.1<-lm(mpg~as.factor(cyl)+wt+as.factor(cyl)*wt,data=mtcars)
+fit.2<-lm(mpg~as.factor(cyl)+wt,data=mtcars)
+anova(fit.1,fit.2)
+```
+TODO: add interpretation and learn anova funcition
+
+# Practical session 8: a for loop
+*Random sample for a population (I)*
+- Draw a random sample of size 10 from N (10, 2) . Calculate the sample mean, the sample variance and the standard error of the sample mean.
+```{r}
+x <- rnorm(10, 10, 2)
+mean(x)
+var(x)
+```
+
+- Draw 1000 random samples of size 10 from N (10, 2) . For each sample, calculate the sample mean, the sample variance and the standard error of the sample mean.
+```{r}
+means <- rep(NA, 1000)
+vars <- rep(NA, 1000)
+for (i in 1:1000) {
+  x <- rnorm(10, 10, 2)
+  means[i] <- mean(x)
+  vars[i] <- var(x)
+}
+```
+
+- Produce the histogram for the sample means.
+```{r}
+hist(means)
+```
+
+- Calculate the variance of the 1000 sample means.
+```{r}
+var(means)
+```
+
+
+* Random sample for a population (II)*
+- Draw 1000 random samples of size 10000 from N (0, 1). For each sample, calculate the proportion of observations smaller than -1.96, i.e., P ^(X < −1.96)
+```{r}
+proportions <- rep(NA, 1000)
+for (i in 1:1000) {
+  x <- rnorm(10000, 0, 1)
+  proportions[i] <- length(x[x < -1.96]) / 10000
+}
+
+```
+
+- Produce the histogram for P ^ (X < −1.96) .
+```{r}
+hist(proportions)
+
+```
+
+- Calculate the mean of P ^ (X < −1.96) and interpret the results.
+```{r}
+mean(proportions)
+pnorm(-1.96)
+```
+
+# Practical session 9: user functions
+*One-way ANOVA*
+TODO: understand
+Write a function that can be used to fit a One-way ANOVA model for a continuous response and a factor. The function should produce the following output:
+- A side by side boxplot in which the response is presented across the factor levels.
+- A multi-way histogram in which the response is presented across the factor levels.
+- The overall response mean and the response mean by the factor level. ANOVA table.
+- Distribution of the residuals.
+
+```{r}
+fun.aov <- function(y, x) {
+  mean(y)
+  tapply(y, as.factor(x), mean)
+  boxplot(split(y, as.factor(x)))
+  fit.aov <- aov(y ~ as.factor(x))
+  result <- summary(fit.aov)
+  plot(fit.aov)
+  return (result)
+}
+fun.aov(mtcars$mpg,mtcars$gear)
+```
+
+*Univariate analysis*
+TODO: understand
+Write a function that explore the distribution of a continues response. The function should produce the following output:
+- Produce a qq-normal plot for the response.
+- Produce a histogram for the response.
+- Produce a boxplot for the response.
+- Calculate the mean, median and trimmed mean (10% ) for the response.
+- Calculate the variance and the range of the response.
+```{r}
+fun.univariate<-function(y)
+{
+print(c(mean(y),mean(y,trim=0.05),median(y)))
+print(var(y))
+print(quantile(y))
+par(mfrow=c(2,2))
+qqnorm(y)
+boxplot(y)
+hist(y)
+}
+fun.univariate(mtcars$mpg)
+```
+
+
+# Practical session 10: using a forloop
+*Sampling from N (0, 1)*
+Use a for loop to solve the following problems.
+- Draw a random sample of size 25 from N (0, 1). Plot the histogram and density estimate and calculate the mean and variance.
+```{r}
+x <- rnorm(25, 0, 1)
+mean(x)
+var(x)
+```
+
+- Draw 100 random samples of size 25 from N (0, 1), for each sample, calculate the sample mean and variance. Plot a histogram for the sample mean and the sample variance and add, for each histogram, a vertical line with the true values.
+```{r}
+means <- rep(NA, 100)
+vars <- rep(NA, 100)
+for (i in 1:100) {
+  x <- rnorm(25, 0, 1)
+  means[i] <- mean(x)
+  vars[i] <- var(x)
+  hist(x)
+  abline(v = 0, col = "red")
+}
+
+```
+
+- Draw a random sample of size 5,10,25,50,100,200,500 and 1000 form N (0, 1). For each sample size draw 100 random samples. For each sample calculate the mean and variance. Produce a boxplot in which you plot the sample means for each sample size (in the same figure). Do the same for the sample variance.
+```{r}
+means <- rep(NA, 100)
+vars <- rep(NA, 100)
+N <- c(5, 10, 25, 50, 100, 200, 500, 1000)
+for (i in 1:100) {
+  for (n in N) {
+    x <- rnorm(n, 0, 1)
+  }
+}
+```
+TODO: finish
+
+
+
+
+
+
+
+
+
+
+

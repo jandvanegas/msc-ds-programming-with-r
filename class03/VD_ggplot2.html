@@ -1,0 +1,1745 @@
+<!DOCTYPE html>
+<html lang="" xml:lang="">
+  <head>
+    <title>Visualizing Data and Exploratory Data analysis</title>
+    <meta charset="utf-8" />
+    <meta name="author" content="Ziv SHkedy et al. (2022)" />
+    <meta name="date" content="2022-11-10" />
+    <script src="libs/header-attrs/header-attrs.js"></script>
+    <link href="libs/remark-css/default.css" rel="stylesheet" />
+    <link href="libs/remark-css/chocolate.css" rel="stylesheet" />
+    <link href="libs/remark-css/rladies-fonts.css" rel="stylesheet" />
+  </head>
+  <body>
+    <textarea id="source">
+
+
+
+
+
+
+
+class: center, middle
+
+
+# Visualizing Data and Exploratory Data analysis using R
+## Part 1: Univariate datasets
+
+#### Ziv Shkedy et al. (2022)
+
+
+---
+
+
+class: center, middle
+
+# Part 1: Introduction 
+
+---
+
+
+#  Location, Spread and Shape in univariate data
+
+* In the first part we focus on descriptive measures, numerical and graphical, to
+characterize and visualize the features of a particular univariate distribution. 
+* The following three main factors are usually used to specify a paticular distribution:
+  * Location
+  * Spread
+  * Shape
+
+* Each of these control different characteristics of a distribution.
+
+---
+
+# R datasets for illustraions
+
+* In order to simplify the usage of slides, the data we used for illustrations are R datasets.
+* We give a short description  of each data in the relevant slides.
+* More details can be found with &lt;tt&gt;help(dataset)&lt;/tt&gt; or (for datasets of the first part) in
+
+  * The singers data: [singers](https://stat.ethz.ch/R-manual/R-devel/library/lattice/html/singer.html).
+  * The airquality data: [airquality](https://stat.ethz.ch/R-manual/R-devel/library/datasets/html/airquality.html).
+  * The cars data: [mtcars](https://www.rdocumentation.org/packages/datasets/versions/3.6.2/topics/mtcars).
+  * The Old Faithful Geyser Data: [oldfaithful](      https://stat.ethz.ch/R-manual/R-patched/library/datasets/html/faithful.html)
+
+---
+  
+
+
+# What do we cover in this part ?
+
+* How to tell the story in a univariate data using R ?
+* A very short introduction to &lt;tt&gt;ggplot2&lt;/tt&gt;.
+ 
+  * Layers and components of a graphical deaply.
+  * How to develop a cool figure ?
+  * Components of visualization.
+
+* Patterns in Univariate datasets: location speard and shape.
+
+---
+
+
+# &lt;tt&gt;ggplot2&lt;/tt&gt;  and &lt;tt&gt;lattice&lt;/tt&gt; ?
+
+ 
+* The following basic graphical functions are used for visualization:
+
+   - &lt;tt&gt;plot()&lt;/tt&gt;
+   - &lt;tt&gt;lines()&lt;/tt&gt;
+   - &lt;tt&gt;hist()&lt;/tt&gt;
+   - &lt;tt&gt;boxplot()&lt;/tt&gt;
+   - &lt;tt&gt;qqnorm()&lt;/tt&gt;
+    
+* The following &lt;tt&gt;lattice&lt;/tt&gt; graphical functions are used for visualization:
+    
+   - &lt;tt&gt;dotplot()&lt;/tt&gt;
+   - &lt;tt&gt;histogram()&lt;/tt&gt;
+   - &lt;tt&gt;bwplot()&lt;/tt&gt;
+   - &lt;tt&gt;qqmath()&lt;/tt&gt;
+   
+---
+
+# &lt;tt&gt;ggplot2&lt;/tt&gt;  and &lt;tt&gt;lattice&lt;/tt&gt; ?
+    
+* The following &lt;tt&gt;ggplot2&lt;/tt&gt; graphical functions are used for visualization:
+
+   - &lt;tt&gt;ggplot()&lt;/tt&gt;
+   - &lt;tt&gt;geom_point()&lt;/tt&gt;
+   - &lt;tt&gt;theme_bw()&lt;/tt&gt;
+   - &lt;tt&gt;geom_smooth()&lt;/tt&gt;
+   - &lt;tt&gt;geom_histogram()&lt;/tt&gt; 
+   - &lt;tt&gt;geom_boxplot()&lt;/tt&gt;
+   - &lt;tt&gt;geom="density"&lt;/tt&gt;
+   - &lt;tt&gt;geom_violin()&lt;/tt&gt;
+   - &lt;tt&gt;facet_wrap()&lt;/tt&gt;
+   - &lt;tt&gt;qplot()&lt;/tt&gt;
+   - &lt;tt&gt;stat_summary()&lt;/tt&gt;
+   - &lt;tt&gt;geom_density_ridges() +  theme_ridges()&lt;/tt&gt; 
+
+---
+
+# Online references
+
+* Basic Skills in Visualising Data and Exploratory Data Analysis Using R - An interactive online book for the course: [BookVD](https://erbiostat.wixsite.com/vdeda1).
+* Book: R Graphics Cookbook, 2nd edition by Winston Chang: [RGraphics](https://r-graphics.org/).
+* Website: From Data to Viz: [Viz](https://www.data-to-viz.com/).
+
+---
+
+# The &lt;tt&gt;xaringan&lt;/tt&gt; package
+
+* Slides were produced using the &lt;tt&gt;xaringan&lt;/tt&gt; package.
+* To run the program you need to install the the &lt;tt&gt;xaringan&lt;/tt&gt; package.
+* Online book chapter about the &lt;tt&gt;xaringan&lt;/tt&gt; package: [xaringan](https://bookdown.org/yihui/rmarkdown/xaringan.html).
+
+---
+
+
+
+class: center, middle
+
+# Part 2: &lt;tt&gt;ggplot2&lt;/tt&gt;: a short introduction
+
+`Focus: Layers` &lt;br&gt;
+
+---
+
+# The layers of a &lt;tt&gt;ggplot2&lt;/tt&gt; figure 
+
+* A key idea behind &lt;tt&gt;ggplot2&lt;/tt&gt; is that it allows to easily building up a complex plot layer by layer. 
+* Each layer adds an extra level of information to the plot.
+* In that way we can build sophisticated plots tailored to the problem at hand. 
+---
+
+
+# The &lt;tt&gt;mtcars&lt;/tt&gt; data 
+
+* The data gives information about fuel consumption and 10 aspects of automobile design and performance for 32 automobiles (1973–74 models).
+
+```r
+head(mtcars)
+```
+
+```
+##                    mpg cyl disp  hp drat    wt  qsec vs am gear carb
+## Mazda RX4         21.0   6  160 110 3.90 2.620 16.46  0  1    4    4
+## Mazda RX4 Wag     21.0   6  160 110 3.90 2.875 17.02  0  1    4    4
+## Datsun 710        22.8   4  108  93 3.85 2.320 18.61  1  1    4    1
+## Hornet 4 Drive    21.4   6  258 110 3.08 3.215 19.44  1  0    3    1
+## Hornet Sportabout 18.7   8  360 175 3.15 3.440 17.02  0  0    3    2
+## Valiant           18.1   6  225 105 2.76 3.460 20.22  1  0    3    1
+```
+
+* For our example: &lt;tt&gt;mpg&lt;/tt&gt;, &lt;tt&gt;hp&lt;/tt&gt; and &lt;tt&gt;cyl&lt;/tt&gt;.
+---
+
+# The &lt;tt&gt;mtcars&lt;/tt&gt; data 
+
+
+.pull-left[
+* Bivariate data (miles/(US) per gallon, horsepower).
+* Basic scatterplot in R: mgp Vs. hp.
+* &lt;tt&gt;plot()&lt;/tt&gt;.
+* Our aim: fit a linear regression model for mpg with Horsepower as predictor.
+]
+
+.pull-right[
+
+
+```r
+plot(mtcars$hp,mtcars$mpg)
+```
+
+![](VD_ggplot2_files/figure-html/unnamed-chunk-2-1.png)&lt;!-- --&gt;
+]
+
+---
+
+
+# Linear regression 
+
+* A simple linear regression model in R.
+
+
+```r
+fit.lm&lt;-lm(mtcars$mpg~mtcars$hp)
+```
+
+* Fitted model
+
+
+```r
+summary(fit.lm)
+```
+
+```
+## 
+## Call:
+## lm(formula = mtcars$mpg ~ mtcars$hp)
+## 
+## Residuals:
+##     Min      1Q  Median      3Q     Max 
+## -5.7121 -2.1122 -0.8854  1.5819  8.2360 
+## 
+## Coefficients:
+##             Estimate Std. Error t value Pr(&gt;|t|)    
+## (Intercept) 30.09886    1.63392  18.421  &lt; 2e-16 ***
+## mtcars$hp   -0.06823    0.01012  -6.742 1.79e-07 ***
+## ---
+## Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1
+## 
+## Residual standard error: 3.863 on 30 degrees of freedom
+## Multiple R-squared:  0.6024,	Adjusted R-squared:  0.5892 
+## F-statistic: 45.46 on 1 and 30 DF,  p-value: 1.788e-07
+```
+
+---
+
+
+# First layer: basic plot 
+
+.pull-left[
+* Basic plot using &lt;tt&gt;ggplot2&lt;/tt&gt;.
+* Scaterplot and labels.
+]
+
+.pull-right[
+
+```r
+library(ggplot2)
+gg &lt;- ggplot(mtcars, aes(hp, mpg)) +
+        geom_point() +
+        labs(x = "Horsepower",y= "Miles Per Gallon")
+gg
+```
+
+![](VD_ggplot2_files/figure-html/unnamed-chunk-5-1.png)&lt;!-- --&gt;
+]
+
+---
+
+
+
+# What is &lt;tt&gt;aes()&lt;/tt&gt; ?
+
+* &lt;tt&gt;aes()&lt;/tt&gt;: generate aesthetic mappings that describe how variables in the data are mapped to visual properties (Aesthetics) of geoms.
+
+* &lt;tt&gt;aes()&lt;/tt&gt; is a quoting function. This means that its inputs are quoted to be evaluated in the context of the data.
+
+* &lt;tt&gt;aes(hp, mpg)&lt;/tt&gt;: use the vraiables &lt;tt&gt;mpg&lt;/tt&gt; and &lt;tt&gt;hp&lt;/tt&gt; in the plot.
+
+* ggplot2 Cheat Sheet: [ggplot2](https://www.maths.usyd.edu.au/u/UG/SM/STAT3022/r/current/Misc/data-visualization-2.1.pdf).
+
+---
+
+# Second layer: add Cylinders information 
+
+.pull-left[
+* Add colors to the data points (by Cylinders number).
+* &lt;tt&gt;aes(color=as.factor(cyl)), size=5&lt;/tt&gt;.
+as.factor converts cy1 to a factor variable, so it is represented as categorical and not number
+]
+
+.pull-right[
+
+```r
+library(ggplot2)
+gg &lt;- ggplot(mtcars, aes(hp, mpg)) +
+        geom_point(aes(color=as.factor(cyl)), size=5) +
+        labs(x = "Horsepower",y= "Miles Per Gallon",color= "# of Cylinders")
+gg
+```
+
+![](VD_ggplot2_files/figure-html/unnamed-chunk-6-1.png)&lt;!-- --&gt;
+]
+
+---
+
+# What is &lt;tt&gt;geom&lt;/tt&gt; ?
+
+* A ggplot2 &lt;tt&gt;geom&lt;/tt&gt; tells the plot how do we want to display the data in R. 
+* For example, &lt;tt&gt;geom_bar()&lt;/tt&gt;  makes a bar chart.
+* &lt;tt&gt;geom_point(aes(color=as.factor(cyl)), size=5)&lt;/tt&gt;: produce a scaterplot with points.
+* &lt;tt&gt;aes(color=as.factor(cyl))&lt;/tt&gt;: use different colors acording to the &lt;tt&gt;cyl&lt;/tt&gt; levels.
+* ggplot2 Cheat Sheet: [ggplot2](https://rstudio.com/wp-content/uploads/2015/03/ggplot2-cheatsheet.pdf).
+
+---
+
+
+# Third layer: change the background 
+
+
+.pull-left[
+* Change the theme (to make the figure clear).
+* &lt;tt&gt;theme_bw()&lt;/tt&gt;.
+]
+
+
+.pull-right[
+
+```r
+library(ggplot2)
+gg &lt;- ggplot(mtcars, aes(hp, mpg)) +
+        geom_point(aes(color=as.factor(cyl)), size=5) + labs(x = "Horsepower",y= "Miles Per Gallon",color= "# of Cylinders")+
+        theme_bw()
+gg
+```
+
+![](VD_ggplot2_files/figure-html/unnamed-chunk-7-1.png)&lt;!-- --&gt;
+]
+
+---
+
+# Fourth layer: add the regression line 
+
+.pull-left[
+* Add a regression line.
+* &lt;tt&gt;geom_smooth(method="lm", se=FALSE)&lt;/tt&gt;
+]
+
+
+.pull-right[
+
+```r
+library(ggplot2)
+gg &lt;- ggplot(mtcars, aes(hp, mpg)) +
+        geom_point(aes(color=as.factor(cyl)), size=5) + geom_smooth(method="lm", se=FALSE) +
+        labs(x = "Horsepower",y= "Miles Per Gallon", color= "# of Cylinders") +  theme_bw()
+gg
+```
+
+![](VD_ggplot2_files/figure-html/unnamed-chunk-8-1.png)&lt;!-- --&gt;
+]
+
+---
+
+
+
+
+# Fourth layer: lines by line 
+
+
+.pull-left[
+* &lt;tt&gt;ggplot(data,aes(variables))&lt;/tt&gt;.
+* &lt;tt&gt;geom_point(size)&lt;/tt&gt;.
+* &lt;tt&gt;aes(color the data points)&lt;/tt&gt;.
+* &lt;tt&gt;geom_smooth(add regression line)&lt;/tt&gt;.
+* &lt;tt&gt;labs(add labels)&lt;/tt&gt;.
+]
+
+
+.pull-right[
+
+```r
+library(ggplot2)
+gg &lt;- ggplot(mtcars, aes(hp, mpg)) +
+        geom_point(aes(color=as.factor(cyl)), size=5) + geom_smooth(method="lm", se=FALSE) +
+        labs(x = "Horsepower",y= "Miles Per Gallon", color= "# of Cylinders") + theme_bw()
+gg
+```
+
+![](VD_ggplot2_files/figure-html/unnamed-chunk-9-1.png)&lt;!-- --&gt;
+]
+
+---
+
+
+
+
+# Fourth layer: add C.Is 
+
+.pull-left[
+* Add C.Is to the regression line.
+* &lt;tt&gt;geom_smooth(method="lm", se=TRUE)&lt;/tt&gt;
+]
+
+
+.pull-right[
+
+```r
+library(ggplot2)
+gg &lt;- ggplot(mtcars, aes(hp, mpg)) + geom_point(aes(color=as.factor(cyl)), size=5) +
+        geom_smooth(method="lm", se=TRUE) +
+        labs(x = "Horsepower",y= "Miles Per Gallon",color= "# of Cylinders") +theme_bw()
+gg
+```
+
+![](VD_ggplot2_files/figure-html/unnamed-chunk-10-1.png)&lt;!-- --&gt;
+]
+
+---
+
+
+# Fifth layer: add a smoother 
+
+.pull-left[
+* Add C.I to the regression line.
+* &lt;tt&gt;geom_smooth(method="loess"", se=TRUE)&lt;/tt&gt;
+]
+
+
+.pull-right[
+
+```r
+library(ggplot2)
+gg &lt;- ggplot(mtcars, aes(hp, mpg)) +geom_point(aes(color=as.factor(cyl)), size=5) +
+        geom_smooth(method="lm", se=TRUE) + geom_smooth(method="loess",colour = "blue", size = 1.5)+
+        labs(x = "Horsepower",y= "Miles Per Gallon",color= "# of Cylinders") + theme_bw()
+gg
+```
+
+![](VD_ggplot2_files/figure-html/unnamed-chunk-11-1.png)&lt;!-- --&gt;
+]
+
+---
+
+# Visualize patterns  across cylinders  
+
+.pull-left[
+* How the dependence between mpg and hp with Cylinder numbers.
+]
+
+
+.pull-right[
+
+
+```r
+qplot(hp,mpg,data = mtcars, colour = factor(cyl))+
+geom_smooth(method = "lm",se = F)
+```
+
+![](VD_ggplot2_files/figure-html/unnamed-chunk-12-1.png)&lt;!-- --&gt;
+]
+
+
+---
+
+
+
+class: center, middle
+
+# Part 3: Location
+
+`Focus: the center of the distribution` &lt;br&gt;
+
+`Graphical and numerical summaries` &lt;br&gt;
+
+---
+
+
+# YouTube tutorial: calculating Mean, Median, Range, Minimum and Maximum using R studio 
+
+For a short online YouTube tutorial, by BIO-RESEARCH, about the mean, median etc, using R see [YTVD4](https://www.youtube.com/watch?v=nkSl9hwh-dQ).
+
+---
+
+# YouTube tutorial: dotplot
+
+* For a short online YouTube tutorial, by ramstatvid, about dotplot using the \texttt{lattice} package see [YTVD5]( https://www.youtube.com/watch?v=-FGU6PMaSRY).
+
+* For a short online YouTube tutorial, by ramstatvid, about dotplot using the \texttt{gg2plot} package see [YTVD6]( https://www.youtube.com/watch?v=y1CsT-jAWZQ)
+
+---
+
+
+# Location
+
+.pull-left[
+* Location is the center of the distribution. 
+* The figure presents distributions with different locations.
+* Two normal densities with mean equal to 0 (the black line) and mean equal to 2 (the red line).
+]
+
+.pull-right[
+
+```r
+x&lt;-seq(from=-5,to=5,length=1000)
+dx1&lt;-dnorm(x,0,1)
+dx2&lt;-dnorm(x,2,1)
+plot(x,dx1,type="l")
+lines(x,dx2,col=2)
+```
+
+![](VD_ggplot2_files/figure-html/unnamed-chunk-13-1.png)&lt;!-- --&gt;
+]
+
+---
+
+# Location
+
+.pull-left[
+* Histograms for two `\(random\)` `\(samples\)` drawn from normal distribution with the same variance but different  mean. 
+* Both histograms show that the data are symmetric around the sample mean but the histogram of `\(x_{2}\)` is located to the right relative to the histogram of `\(x_{1}\)`. 
+]
+
+.pull-right[
+
+```r
+x1 &lt;- rnorm(10000, 0, 1)
+x2 &lt;- rnorm(10000, 2, 1)
+par(mfrow = c(2, 1))
+hist(x1, col = 0, nclass = 50, xlim = c(-4, 6))
+hist(x2, col = 0, nclass = 50, xlim = c(-4, 6))
+```
+
+![](VD_ggplot2_files/figure-html/unnamed-chunk-14-1.png)&lt;!-- --&gt;
+]
+
+---
+
+
+# Graphical displays for location
+.pull-left[
+* How can we visualize the distribution ?
+* How can we visualize a shift in location ?
+* Numerical summaries for location (look at the book): mean. median, trimmed mean...
+]
+
+.pull-right[
+![](VD_ggplot2_files/figure-html/unnamed-chunk-15-1.png)&lt;!-- --&gt;
+]
+
+---
+
+#  The singer dataset
+* The singer datset (the R object &lt;tt&gt;singer&lt;/tt&gt;) is a data frame giving the heights of singers in the New York Choral Society. 
+* The variables are named &lt;tt&gt;height&lt;/tt&gt; (inches) and &lt;tt&gt;voice.part&lt;/tt&gt; which is the voice group of the singer
+
+   * Alto.
+   * Sporano.
+   * Tenor.
+   * Bass.
+   
+* Each voice group is subdivied into two groups, high voice and low voice (for example Bass1 and Bass2 and the lower and higher Bass voices, respectivly). 
+* Main focus: the distribution of the singers' &lt;tt&gt;height&lt;/tt&gt;.
+
+---
+
+#  The singer dataset
+
+* The data:
+
+
+```r
+head(singer)
+```
+
+```
+##   height voice.part
+## 1     64  Soprano 1
+## 2     62  Soprano 1
+## 3     66  Soprano 1
+## 4     65  Soprano 1
+## 5     60  Soprano 1
+## 6     61  Soprano 1
+```
+
+---
+
+# Stripplot (&lt;tt&gt;lattice&lt;/tt&gt;)
+
+.pull-left[
+* Stripplot:  plots the data of each voice group in a different strip. 
+* &lt;tt&gt;voice.part~height&lt;/tt&gt;.
+* A clear main pattern in the data: 
+  * It is easy to distinguish between women (Sopranos and Altos) and men (Tenors and Basses). 
+  * Women are clearly shorter than men.
+]
+
+.pull-right[
+
+```r
+dotplot(singer$voice.part~singer$height, 
+		aspect=1,
+		xlab="Mean Height (inches)")
+```
+
+![](VD_ggplot2_files/figure-html/unnamed-chunk-17-1.png)&lt;!-- --&gt;
+]
+
+---
+
+# Stripplot (&lt;tt&gt;ggplot2&lt;/tt&gt;): first layer
+
+.pull-left[
+* An equivalent stripplot can be produced using the &lt;tt&gt;ggplot()&lt;/tt&gt; package. 
+* The function &lt;tt&gt;geom_jitter&lt;/tt&gt;: observatios with the same values will be ploted side by side and will not overlap so sample size would be seen as well in the plot.  
+]
+
+.pull-right[
+
+```r
+ggplot(singer, 
+       aes(voice.part,height)) + 
+       geom_jitter(position = position_jitter(width = .05))
+```
+
+![](VD_ggplot2_files/figure-html/unnamed-chunk-18-1.png)&lt;!-- --&gt;
+]
+
+---
+
+# Mean by voice group
+
+* In order to get a better insight of other patterns, we can summarize the distribution of each group with the sample mean. 
+* In R this can be done using the function &lt;tt&gt;tapply()&lt;/tt&gt;. 
+* To calculate mean of height by the voice group in the singer dataset we use
+
+
+```r
+attach(singer)
+tapply(singer$height,singer$voice.part,mean)
+```
+
+```
+##    Bass 2    Bass 1   Tenor 2   Tenor 1    Alto 2    Alto 1 Soprano 2 Soprano 1 
+##  71.38462  70.71795  69.90476  68.90476  66.03704  64.88571  63.96667  64.25000
+```
+
+---
+
+# Mean by voice group
+
+* The group means point on the pattern that was already detected: on average men are taller than women. 
+* In addition, we can see that within each gender group, singers with lower voice are taller than singers with higher voice. 
+* For example, the average of the two bass groups (71.38 and 70.71 for Bass 1 and Bass 2 respectively) are higher than the average in the tenor groups (69.90 and 68.90 for Tenor 1 and Tenor 2 respectively). 
+
+---
+
+# Mean by voice group
+
+* Among women, the sopranos are shorter, on average, than the altos. 
+* Within each voice group (all except the sopranos), the singers with lower voices (the second voice group Bass 2, Tenor 2 and Alto 2) are taller than the singers with the higher voices (the first group Bass 1, Tenor 1 and Alto 1). 
+* For example the mean of the Bass 2 group (71.38) is higher than the mean of the Bass 1 group (70.71)
+
+---
+
+
+# Stripplot (&lt;tt&gt;ggplot2&lt;/tt&gt;): second layer
+
+.pull-left[
+*  The Figure shows the same information as in slide 34 with the addtion of the mean for each voice group.
+* &lt;tt&gt;stat_summary()&lt;/tt&gt;.
+* &lt;tt&gt;fun.y = "mean"&lt;/tt&gt;.
+]
+
+
+.pull-right[
+
+```r
+ggplot(singer, aes(voice.part,height)) +
+geom_point() +
+stat_summary(geom = "point", fun.y = "mean", colour = "red", size = 4)
+```
+
+![](VD_ggplot2_files/figure-html/unnamed-chunk-20-1.png)&lt;!-- --&gt;
+]
+
+---
+
+# Boxplot (&lt;tt&gt;lattice&lt;/tt&gt;)
+
+.pull-left[
+* Graphical display of the location of each distribution is the box plot.
+* The location of each group is summarized by the median (the dot inside the box). 
+* Other aspects of this plot will be discussed in later chapters). 
+* Note that the function &lt;tt&gt;bwplot()&lt;/tt&gt; is a part of the &lt;tt&gt;lattice&lt;/tt&gt; package.
+]
+
+.pull-right[
+
+```r
+bwplot(as.factor(singer$voice.part)~ singer$height,
+		data=singer,
+		aspect=1,
+		xlab="Height (inches)")
+```
+
+![](VD_ggplot2_files/figure-html/unnamed-chunk-21-1.png)&lt;!-- --&gt;
+]
+
+---
+
+# Multiway histogram (&lt;tt&gt;lattice&lt;/tt&gt;)
+
+.pull-left[
+
+* The multiway histogram presents the distributions of heights across the voice groups. 
+* Note how the distribution of height is shiffted from left to right across the voice levels.
+]
+
+.pull-right[
+
+```r
+histogram(~ singer$height | singer$voice.part,
+		data=singer, layout = c(2, 4), 
+		  aspect = 0.5,xlab = "height")
+```
+
+![](VD_ggplot2_files/figure-html/unnamed-chunk-22-1.png)&lt;!-- --&gt;
+]
+
+---
+
+# Multiway histogram (&lt;tt&gt;ggplot2&lt;/tt&gt;)
+
+.pull-left[
+* An equivalent multiway histogram can be produce with the &lt;tt&gt;ggplot2&lt;/tt&gt; package.
+* Addtional two layers in the basic plot:
+  * The first layer spacifys the plot type &lt;tt&gt;histogram()&lt;/tt&gt;.
+  * The second layer indicates the factor for the plot partions.
+  * The function &lt;tt&gt;facet_wrap(factor)&lt;/tt&gt;. 
+]
+
+
+.pull-right[
+
+```r
+ggplot(singer, aes(height,fill = voice.part)) +
+geom_histogram() +
+facet_wrap(~voice.part,ncol = 2)
+```
+
+![](VD_ggplot2_files/figure-html/unnamed-chunk-23-1.png)&lt;!-- --&gt;
+]
+
+---
+
+
+class: center, middle
+
+# Part 4: Spread
+
+`Focus: Variability around the center of the distribution` &lt;br&gt;
+
+---
+
+
+# Spread
+
+.pull-left[
+* Two normal densities that have different variability (or spread). 
+* The density with the black line has variance 1 and density with the green line has variance 2.  
+]
+
+.pull-right[
+
+```r
+dx3&lt;-dnorm(x,0,2)
+plot(x,dx1,type="l")
+lines(x,dx3,col=3)
+```
+
+![](VD_ggplot2_files/figure-html/unnamed-chunk-24-1.png)&lt;!-- --&gt;
+]
+
+---
+
+# Spread
+
+.pull-left[
+* Two samples  were drawn from normal distribution with mean equal to 0 but with different variance. 
+* The two distributions have the same shape, both histograms are symmetric around 0 as expected. 
+* The spread in the histogram of `\(x_{2}\)` is much higher than the spread in the histogram of `\(x_{1}\)`.
+]
+
+.pull-right[
+
+```r
+x1 &lt;- rnorm(10000, 0, 0.75)
+x2 &lt;- rnorm(10000, 0, 2)
+par(mfrow = c(2, 1))
+hist(x1, col = 0, nclass = 25, xlim = c(-4, 6), ylim = c(0, 1000))
+hist(x2, col = 0, nclass = 50, xlim = c(-4, 6), ylim = c(0, 1000))
+```
+
+![](VD_ggplot2_files/figure-html/unnamed-chunk-25-1.png)&lt;!-- --&gt;
+]
+
+---
+
+# Main concepts
+ * Up till now we summarized the distribution of the data with location estimators.
+ * In this chapter we focus on the spread. 
+ * We want to measure how close the data are to each other and how concentrate the data around the center of the distribution.
+ * Numerical summaries for spread (see in the book):
+ 
+    * The sample variance.
+    * The fourth-spared.
+    * The MAD as measures
+  
+ * Graphical displays:
+ 
+   * boxplot.
+   * violin plot.
+   
+---
+
+
+# Boxplot: A graphical display for spread and location
+
+.pull-left[
+* Boxplot is a graphical display which shows the location, the spread and the shape of the distribution. 
+* The location is summarized by the median, the spread is summarized by the fourth-spread which is simply the length of the box in the boxplot.
+* Inside the box: `\(50\%\)` of the data.
+]
+
+.pull-right[
+![](VD_ggplot2_files/figure-html/unnamed-chunk-26-1.png)&lt;!-- --&gt;
+]
+
+---
+
+# Boxplot: A graphical display for spread and location
+
+* The upper and lower adjacent values in the boxplot are given by
+
+`$$\mbox{Upper adjacent value} = \textit{Min}  \left \{ max(X),Q_{3}+1.5(Q_{3}-Q_{1}) \right \}$$`
+
+`$$\mbox{Lower adjacent value} = \textit{max}  \left \{ min(X),Q_{1}-1.5(Q_{3}-Q_{1}) \right \}$$`
+
+* The upper and lower adjacent values are used to identify extrime values. 
+* Observations higher than the upper adjacent value or smaller than the lower adjacent value are considered to be outliers. 
+
+---
+
+# Example: the airqiality data
+
+.pull-left[
+* Daily air quality measurements in New York, May to September 1973.
+* The histogram and boxplot for the airquality data: Ozone level.
+* A skewed distribution with few outliers at the upper tail (histogram). 
+* In the boxplot these outliers can be identified above the upper adjacent value.
+]
+
+.pull-right[
+
+```r
+par(mfrow=c(1,2))
+airquality1&lt;-na.omit(airquality)
+hist(airquality1$Ozone)
+boxplot(airquality1$Ozone)
+```
+
+![](VD_ggplot2_files/figure-html/unnamed-chunk-27-1.png)&lt;!-- --&gt;
+]
+
+---
+
+
+# YouTube tutorial: Boxplot in R
+
+* For a short online YouTube tutorials:
+
+  * by Data Science Tutorials, about boxplot using the &lt;tt&gt;ggplot2&lt;/tt&gt; package see
+    [YTVD8](https://www.youtube.com/watch?v=48UvtcXTb9U).
+    
+  * by LawrenceStats, about boxplot  using the &lt;tt&gt;ggplot2&lt;/tt&gt; package see 
+    [YTVD9](https://www.youtube.com/watch?v=48UvtcXTb9U)
+
+---
+
+# Web tutorial: Advanced boxplots in R
+
+* Example for advanced  boxplots in R using the &lt;tt&gt;ggplot2&lt;/tt&gt;  package and code to produce the plots can be found in the R Graph Gallery website here [WAVD2]( https://www.r-graph-gallery.com/boxplot).
+
+
+---
+
+# Boxplot for the singers data
+
+.pull-left[
+* A boxplot for  the singers' height by voice group that was produced using the function &lt;tt&gt;geom_boxplot()&lt;/tt&gt;.
+]
+
+.pull-right[
+
+```r
+ggplot(singer, aes(voice.part,height)) + geom_boxplot()
+```
+
+![](VD_ggplot2_files/figure-html/unnamed-chunk-28-1.png)&lt;!-- --&gt;
+]
+
+---
+
+# Boxplot for the singers data
+
+
+.pull-left[
+* The same boxplot in which colors (by group) are added to the boxplot  using the argument &lt;tt&gt;fill=voice.part&lt;/tt&gt;. 
+* Note that the object &lt;tt&gt;voice.part&lt;/tt&gt; is a factor.
+]
+
+.pull-right[
+
+```r
+ggplot(singer, aes(voice.part,height,fill=voice.part)) + geom_boxplot()
+```
+
+![](VD_ggplot2_files/figure-html/unnamed-chunk-29-1.png)&lt;!-- --&gt;
+]
+
+---
+
+
+# Boxplot for the singers data
+
+.pull-left[
+* The data are added to the boxplot using the argument &lt;tt&gt;geom = c("boxplot", "jitter")&lt;/tt&gt;.
+]
+
+.pull-right[
+
+```r
+qplot(voice.part, height, data = singer, geom = c("boxplot", "jitter"))
+```
+
+![](VD_ggplot2_files/figure-html/unnamed-chunk-30-1.png)&lt;!-- --&gt;
+]
+
+---
+
+# Violin plot for the singers data
+
+.pull-left[
+* When the argument &lt;tt&gt;geom_violin()&lt;/tt&gt; is used instead of &lt;tt&gt;geom_boxplot()&lt;/tt&gt; the boxplot  become a violin plot.
+]
+
+.pull-right[
+
+```r
+ggplot(singer, aes(voice.part,height)) + geom_violin()
+```
+
+![](VD_ggplot2_files/figure-html/unnamed-chunk-31-1.png)&lt;!-- --&gt;
+]
+
+---
+
+
+
+
+class: center, middle
+
+# Part 5: Shape
+
+`Focus: How does the distribution look like ?` &lt;br&gt;
+
+
+---
+
+
+
+# Shape
+
+.pull-left[
+* Two beta densities having diffent shapes.
+* Black line: `\(Beta(2,2)\)`, red line: `\(Beta(2,4)\)`.
+]
+
+.pull-right[
+![Shape](VD_ggplot2_files/figure-html/figchp12i-1.png)
+]
+
+---
+
+# Shape
+
+.pull-left[
+*  4 samples (each with 10000 observations) that were drawn from different distributions.
+* `\(x_{1}\)` and `\(x_{2}\)`: samples were drawn from symmetric distributions. 
+* The distributions of `\(x_{3}\)` is skewed to the left and the distribution of `\(x_{4}\)` to the right.
+]
+
+
+.pull-right[
+![](VD_ggplot2_files/figure-html/unnamed-chunk-32-1.png)&lt;!-- --&gt;
+]
+
+---
+
+
+# Density and density estimate
+
+* So far we used histogram to visualize the shape of the distribution of the observations in the sample. 
+* In this chapter we discuss density estimates as a method to estimate and visualized the distribution in the population.  
+
+---
+
+# Density and density estimate
+
+.pull-left[
+
+* A density function of `\(N(0,1)\)` that represents the distribution of a random variable in the population. 
+* Suppose that we draw a random sample of size `\(n\)` from the population. 
+* The histogram can be used to visualize the shape of the distribution. 
+* It is an estimate for the density in the population. 
+]
+
+.pull-right[
+
+![](VD_ggplot2_files/figure-html/unnamed-chunk-33-1.png)&lt;!-- --&gt;
+]
+
+
+---
+
+# Density and density estimate
+
+.pull-left[
+* A second approach to estimate the distribution of the population is to use a smooth version of the histogram
+, i.e., a density estimate. 
+* The density estimate for our example is shown (in red) panel c and d.
+]
+
+.pull-right[
+![](VD_ggplot2_files/figure-html/unnamed-chunk-34-1.png)&lt;!-- --&gt;
+]
+---
+
+
+# YouTube tutorial: Creating density plots and enhancing it with the &lt;tt&gt;ggplot2&lt;/tt&gt; package 
+
+* A short online YouTube tutorial by LawrenceStats, about density plot using the &lt;tt&gt;ggplot2&lt;/tt&gt; package see [YTVD10](https://www.youtube.com/watch?v=kvg0y90GX0Y).
+
+---
+
+# Web tutorial: the ridgeline chart
+
+* A Web tutorial about the ridgeline chart using the &lt;tt&gt;ggplot2&lt;/tt&gt; and &lt;tt&gt;ggridges&lt;/tt&gt; package is given in the the R Graph Gallery website [WAVD4](https://www.r-graph-gallery.com/ridgeline-plot.html).
+
+---
+
+
+#  The old faithful data
+
+* The data gives information about waiting time between eruptions and the duration of the eruption for the Old Faithful geyser in Yellowstone National Park, Wyoming, USA.
+* Two variables:
+  
+   * &lt;tt&gt;eruptions&lt;/tt&gt;:	numeric,	Eruption time in mins.
+   * &lt;tt&gt;waiting&lt;/tt&gt;:	numeric,	Waiting time to next eruption (in mins)
+
+---
+
+
+#  The old faithful data
+
+
+.pull-left[
+
+* Histogram of eruptions time.
+* A bi-model.
+* &lt;tt&gt;hist()&lt;/tt&gt;: basic graphical function in R.
+]
+
+
+.pull-right[
+
+
+```r
+hist(faithful$eruptions,nclass=20,col=2)
+```
+
+![](VD_ggplot2_files/figure-html/unnamed-chunk-35-1.png)&lt;!-- --&gt;
+]
+
+---
+
+#  The old faithful data
+
+
+.pull-left[
+
+* A failure of the boxplot to capture this feature (the bi-model) of the data .
+]
+
+
+.pull-right[
+
+
+```r
+qplot(rep(1,length(eruptions)),eruptions, data=faithful, geom = c("boxplot"))
+```
+
+![](VD_ggplot2_files/figure-html/unnamed-chunk-36-1.png)&lt;!-- --&gt;
+]
+
+---
+
+#  The old faithful data
+
+.pull-left[
+* We add the data to the boxplot, using the option &lt;tt&gt;geom = c("boxplot", "jitter")&lt;/tt&gt;.
+* We identify the two parts of the  eruptions time distribution.
+]
+
+
+.pull-right[
+
+```r
+qplot(rep(1,length(eruptions)),eruptions, data=faithful, geom = c("boxplot", "jitter"))
+```
+
+![](VD_ggplot2_files/figure-html/unnamed-chunk-37-1.png)&lt;!-- --&gt;
+]
+
+---
+
+
+#  The old faithful data
+
+.pull-left[
+* The histogram is able to capture the shape of the distribution. 
+]
+
+
+.pull-right[
+
+
+```r
+qplot(eruptions, data=faithful, geom="histogram")
+```
+
+![](VD_ggplot2_files/figure-html/unnamed-chunk-38-1.png)&lt;!-- --&gt;
+]
+
+---
+
+#  The old faithful data
+
+.pull-left[
+* A density estimate was produced using the opion &lt;tt&gt;geom="density")&lt;/tt&gt; provides a smooth estimate of the distribuon.
+]
+
+
+.pull-right[
+
+
+```r
+qplot(eruptions, data=faithful, geom="density")
+```
+
+![](VD_ggplot2_files/figure-html/unnamed-chunk-39-1.png)&lt;!-- --&gt;
+]
+
+---
+
+
+#  The old faithful data
+
+.pull-left[
+
+* We can plot both histogram and density in the same plot.
+]
+
+
+
+.pull-right[
+
+```r
+hist(faithful$eruptions,nclass=15,probability = TRUE)
+dx&lt;-density(faithful$eruptions)
+lines(dx$x,dx$y,lwd=2,col=2)
+```
+
+![](VD_ggplot2_files/figure-html/unnamed-chunk-40-1.png)&lt;!-- --&gt;
+]
+
+---
+
+#  The singer data
+
+.pull-left[
+* We use density plots to visualize the shit of the distribution of the singers' height across the voice part groups.
+* The histograms ravel the shifts within and between the voice groups.
+]
+
+
+.pull-right[
+
+```r
+ggplot(singer, aes(height,fill = voice.part)) +
+geom_histogram() +
+facet_wrap(~voice.part,ncol = 2)
+```
+
+![](VD_ggplot2_files/figure-html/unnamed-chunk-41-1.png)&lt;!-- --&gt;
+]
+
+---
+
+#  The singer data
+
+.pull-left[
+
+* In the density plots:
+  * The difference between the sopranos and altos (women singers, the densities in the left) and the tenors and basses (men singers, densities in the right) is clearly seen.
+  * The difference within each group is more difficult to detect. 
+]
+
+.pull-right[
+
+```r
+qplot(height, data=singer, geom="density", xlim = c(50,80),
+fill = voice.part, alpha = I(0.2))
+```
+
+![](VD_ggplot2_files/figure-html/unnamed-chunk-42-1.png)&lt;!-- --&gt;
+]
+
+---
+
+#  The singer data
+
+.pull-left[
+* A ridgeline charts visualizes the difference between the groups and within each voice group. 
+* Note that the R package &lt;tt&gt;ggridges&lt;/tt&gt; should be instaled to produce the plot.
+]
+
+.pull-right[
+
+```r
+library(ggridges)
+ggplot(singer, aes(x=height,y=voice.part,fill = voice.part)) +
+  geom_density_ridges() +
+  theme_ridges() + 
+  theme(legend.position = "none")
+```
+
+![](VD_ggplot2_files/figure-html/unnamed-chunk-43-1.png)&lt;!-- --&gt;
+]
+
+---
+
+class: center, middle
+
+# Part 6: Shape (normal probability plot)
+
+`Focus: Normal distribution?` &lt;br&gt;
+
+---
+
+
+#  Normal probability plot
+
+* A normal probability plot is a plot in which the quantile of the samples are plotted versus the corresponding quantiles of a standard normal distribution `\(N(0,1)\)`. 
+* In this chapter we discuss the normal probability plot as a graphical tools to vizualise the shape of a distribution. 
+* Using histograms and boxplots we are able to investigate the shape of the distribution focusing on the follwing issues:
+
+  * How nearly symmetric the distribution of the data is.
+  * Whether the distribution of the data is single-peaked, or whether it is multi-peaked.
+  * Whether it is skewed.
+  * How far we  from a Normal distribution ?
+  
+---
+
+
+# Quantile of `\(N(\mu,\sigma^{2})\)`: Definition and a simple example
+
+* A qq normal plot is a graphical disply to investigate how now nearly is the sample to a normal distribution. Let `\(q_{\mu,\sigma}(f)\)` be a quantile of `\(N(\mu,\sigma^{2})\)`, it can be expressed as
+
+`$$q_{\mu,\sigma}(f)=\mu+\sigma q_{0,1}(f).$$`
+
+* For example, the $2.5 \% $ quantile of the standard normal distribution is -1.96. 
+
+
+```r
+qnorm(0.025,0,1)
+```
+
+```
+## [1] -1.959964
+```
+
+* For `\(N(2,5^{2})\)` we have 
+
+`$$q_{2,5}(2.5 \% )=2+ 5 \times - 1.96=-7.8$$`
+
+
+
+```r
+qnorm(0.025,2,5)
+```
+
+```
+## [1] -7.79982
+```
+
+---
+
+# YouTube tutorial: QQ-plots in RStudio
+
+For a short online YouTube tutorials by UTSSC, about normal probability plot using R studio see [YTVD12](https://www.youtube.com/watch?v=louihSVsMC0).
+
+
+---
+
+
+
+# A sample from N(0,1)
+
+.pull-left[
+* We use the R function &lt;tt&gt;qqnorm()&lt;/tt&gt; to produce the normal probabilty plot.
+* Data were sampled from `\(N(0,1)\)`.
+* we expect that all points in the normal probability plot will lay on the on the `\(45^o\)` line. 
+]
+
+
+.pull-right[
+
+```r
+x &lt;- rnorm(1000, 0, 1)
+par(mfrow = c(2, 2))
+hist(x, nclass = 25, col = 0)
+boxplot(x, boxcol = 2, medcol = 1)
+qqnorm(x)
+abline(0, 1)
+```
+
+![](VD_ggplot2_files/figure-html/unnamed-chunk-46-1.png)&lt;!-- --&gt;
+]
+
+---
+
+
+
+
+# A Sample from N(2,1)
+
+.pull-left[
+* A sample  from `\(N(2,1)\)`, i.e., it represents a shift model with the same variabiliy comapre to `\(N(0,1)\)`.
+* In this case we expect that all points in the normal probability plot will lay above and parallel to the `\(45^{o}\)` lines. 
+]
+
+.pull-right[
+
+```r
+par(mfrow = c(2, 2))
+x &lt;- rnorm(1000, 2, 1)
+hist(x, nclass = 25, col = 0)
+boxplot(x, boxcol = 2, medcol = 1)
+qqnorm(x)
+abline(0, 1)
+```
+
+![](VD_ggplot2_files/figure-html/unnamed-chunk-47-1.png)&lt;!-- --&gt;
+]
+
+---
+
+
+# A Sample from N(0,2)
+
+.pull-left[
+* The sample was drawn from `\(N(0,2^2)\)` which implies that the mean is the same as `\(N(0,1)\)` but the variability is higher. 
+* We expect the points in the normal probability plot to form a straight line with higher slope than 1.
+]
+
+.pull-right[
+
+```r
+par(mfrow = c(2, 2))
+x &lt;- rnorm(1000, 0, 2)
+hist(x, nclass = 25, col = 0)
+boxplot(x, boxcol = 2, medcol = 1)
+qqnorm(x)
+abline(0, 1)
+```
+
+![](VD_ggplot2_files/figure-html/unnamed-chunk-48-1.png)&lt;!-- --&gt;
+]
+
+
+---
+
+
+# A Sample from `\(t_{(3)}\)`
+
+.pull-left[
+
+* A `\(t_{(3)}\)` distribution (red line) has the same mean as `\(N(0,1)\)` but longer tails. 
+* Note that the two distribution and centered around zero. 
+]
+
+
+.pull-right[
+
+
+
+
+![](VD_ggplot2_files/figure-html/unnamed-chunk-50-1.png)&lt;!-- --&gt;
+]
+
+---
+
+# A Sample from `\(t_{(3)}\)`
+
+.pull-left[
+* For the normal probability plot we expect that the points will lay on the `\(45^o\)` line in the center but with more extreme values .
+]
+
+
+.pull-right[
+
+```r
+par(mfrow = c(2, 2))
+x &lt;- rt(1000, 3)
+hist(x, nclass = 25, col = 0)
+boxplot(x, boxcol = 2, medcol = 1)
+qqnorm(x)
+abline(0, 1)
+```
+
+![](VD_ggplot2_files/figure-html/unnamed-chunk-51-1.png)&lt;!-- --&gt;
+]
+
+---
+
+
+
+
+# A Sample from `\(t_{(3)}\)`
+
+
+![](VD_ggplot2_files/figure-html/unnamed-chunk-52-1.png)&lt;!-- --&gt;
+
+---
+
+
+# A Sample from `\(U(-3,3)\)`
+
+.pull-left[
+* The data of this example are uniformly distributed across the minimum and maximum values. 
+* We expect the points in the normal probability plot to cross the `\(45^o\)` lines and to lay relatively far from the line.
+]
+
+
+.pull-right[
+
+```r
+x &lt;- runif(1000, -3, 3)
+par(mfrow = c(2, 2))
+hist(x, nclass = 25, col = 0)
+boxplot(x, boxcol = 2, medcol = 1)
+qqnorm(x)
+abline(0, 1)
+```
+
+![](VD_ggplot2_files/figure-html/unnamed-chunk-53-1.png)&lt;!-- --&gt;
+]
+
+---
+
+
+# A Sample from `\(U(-3,3)\)`
+
+![](VD_ggplot2_files/figure-html/unnamed-chunk-54-1.png)&lt;!-- --&gt;
+
+---
+
+
+
+
+
+#  The cars data
+
+.pull-left[
+
+* Normal probability plot for for mpg.
+* `\(N(0,1)\)` ?
+* `\(N(\mu,\sigma^{2})\)` ?
+]
+
+
+
+.pull-right[
+
+```r
+qqnorm(mtcars$mpg)
+```
+
+![](VD_ggplot2_files/figure-html/unnamed-chunk-55-1.png)&lt;!-- --&gt;
+]
+
+---
+
+
+
+#  The cars data
+
+.pull-left[
+* Normal probability plot for for the z-score  of mpg.
+* `\(N(0,1)\)` ?
+]
+
+
+
+.pull-right[
+
+```r
+m.mpg&lt;-mean(mtcars$mpg)
+sd.mpg&lt;-sqrt(var(mtcars$mpg))
+z&lt;-(mtcars$mpg-m.mpg)/sd.mpg
+qqnorm(z)
+abline(0,1,col=2)
+```
+
+![](VD_ggplot2_files/figure-html/unnamed-chunk-56-1.png)&lt;!-- --&gt;
+]
+
+---
+
+
+# The signer dataset
+
+.pull-left[
+* Normal probability plot for the height.
+]
+
+.pull-right[
+
+```r
+qqmath(~ height,
+		distribution = qnorm,
+		data=singer,
+	       layout=c(1,1), 
+             prepanel = prepanel.qqmathline,
+            panel = function(x, ...) {
+            panel.grid()
+            panel.qqmathline(x, ...)
+            panel.qqmath(x, ...)
+            },
+		aspect=1,
+		xlab = "f-value",
+		ylab="height")
+```
+
+![](VD_ggplot2_files/figure-html/unnamed-chunk-57-1.png)&lt;!-- --&gt;
+]
+
+---
+
+
+
+
+# The signer dataset
+
+
+![](VD_ggplot2_files/figure-html/unnamed-chunk-58-1.png)&lt;!-- --&gt;
+
+---
+
+
+
+# The signer dataset
+
+.pull-left[
+* Normal probability plot for the height (by voice group).
+]
+
+.pull-right[
+
+```r
+qqmath(~ height | voice.part,
+		distribution = qnorm,
+		data=singer,
+	       layout=c(4,2), 
+             prepanel = prepanel.qqmathline,
+            panel = function(x, ...) {
+            panel.grid()
+            panel.qqmathline(x, ...)
+            panel.qqmath(x, ...)
+            },
+		aspect=1,
+		xlab = "f-value",
+		ylab="height")
+```
+
+![](VD_ggplot2_files/figure-html/unnamed-chunk-59-1.png)&lt;!-- --&gt;
+]
+
+---
+
+
+# The signer dataset
+
+![](VD_ggplot2_files/figure-html/unnamed-chunk-60-1.png)&lt;!-- --&gt;
+    </textarea>
+<style data-target="print-only">@media screen {.remark-slide-container{display:block;}.remark-slide-scaler{box-shadow:none;}}</style>
+<script src="https://remarkjs.com/downloads/remark-latest.min.js"></script>
+<script src="cols_macro.js"></script>
+<script>var slideshow = remark.create({
+"countIncrementalSlides": false,
+"highlightLines": true,
+"highlightStyle": "github"
+});
+if (window.HTMLWidgets) slideshow.on('afterShowSlide', function (slide) {
+  window.dispatchEvent(new Event('resize'));
+});
+(function(d) {
+  var s = d.createElement("style"), r = d.querySelector(".remark-slide-scaler");
+  if (!r) return;
+  s.type = "text/css"; s.innerHTML = "@page {size: " + r.style.width + " " + r.style.height +"; }";
+  d.head.appendChild(s);
+})(document);
+
+(function(d) {
+  var el = d.getElementsByClassName("remark-slides-area");
+  if (!el) return;
+  var slide, slides = slideshow.getSlides(), els = el[0].children;
+  for (var i = 1; i < slides.length; i++) {
+    slide = slides[i];
+    if (slide.properties.continued === "true" || slide.properties.count === "false") {
+      els[i - 1].className += ' has-continuation';
+    }
+  }
+  var s = d.createElement("style");
+  s.type = "text/css"; s.innerHTML = "@media print { .has-continuation { display: none; } }";
+  d.head.appendChild(s);
+})(document);
+// delete the temporary CSS (for displaying all slides initially) when the user
+// starts to view slides
+(function() {
+  var deleted = false;
+  slideshow.on('beforeShowSlide', function(slide) {
+    if (deleted) return;
+    var sheets = document.styleSheets, node;
+    for (var i = 0; i < sheets.length; i++) {
+      node = sheets[i].ownerNode;
+      if (node.dataset["target"] !== "print-only") continue;
+      node.parentNode.removeChild(node);
+    }
+    deleted = true;
+  });
+})();
+// add `data-at-shortcutkeys` attribute to <body> to resolve conflicts with JAWS
+// screen reader (see PR #262)
+(function(d) {
+  let res = {};
+  d.querySelectorAll('.remark-help-content table tr').forEach(tr => {
+    const t = tr.querySelector('td:nth-child(2)').innerText;
+    tr.querySelectorAll('td:first-child .key').forEach(key => {
+      const k = key.innerText;
+      if (/^[a-z]$/.test(k)) res[k] = t;  // must be a single letter (key)
+    });
+  });
+  d.body.setAttribute('data-at-shortcutkeys', JSON.stringify(res));
+})(document);
+(function() {
+  "use strict"
+  // Replace <script> tags in slides area to make them executable
+  var scripts = document.querySelectorAll(
+    '.remark-slides-area .remark-slide-container script'
+  );
+  if (!scripts.length) return;
+  for (var i = 0; i < scripts.length; i++) {
+    var s = document.createElement('script');
+    var code = document.createTextNode(scripts[i].textContent);
+    s.appendChild(code);
+    var scriptAttrs = scripts[i].attributes;
+    for (var j = 0; j < scriptAttrs.length; j++) {
+      s.setAttribute(scriptAttrs[j].name, scriptAttrs[j].value);
+    }
+    scripts[i].parentElement.replaceChild(s, scripts[i]);
+  }
+})();
+(function() {
+  var links = document.getElementsByTagName('a');
+  for (var i = 0; i < links.length; i++) {
+    if (/^(https?:)?\/\//.test(links[i].getAttribute('href'))) {
+      links[i].target = '_blank';
+    }
+  }
+})();
+// adds .remark-code-has-line-highlighted class to <pre> parent elements
+// of code chunks containing highlighted lines with class .remark-code-line-highlighted
+(function(d) {
+  const hlines = d.querySelectorAll('.remark-code-line-highlighted');
+  const preParents = [];
+  const findPreParent = function(line, p = 0) {
+    if (p > 1) return null; // traverse up no further than grandparent
+    const el = line.parentElement;
+    return el.tagName === "PRE" ? el : findPreParent(el, ++p);
+  };
+
+  for (let line of hlines) {
+    let pre = findPreParent(line);
+    if (pre && !preParents.includes(pre)) preParents.push(pre);
+  }
+  preParents.forEach(p => p.classList.add("remark-code-has-line-highlighted"));
+})(document);</script>
+
+<script>
+slideshow._releaseMath = function(el) {
+  var i, text, code, codes = el.getElementsByTagName('code');
+  for (i = 0; i < codes.length;) {
+    code = codes[i];
+    if (code.parentNode.tagName !== 'PRE' && code.childElementCount === 0) {
+      text = code.textContent;
+      if (/^\\\((.|\s)+\\\)$/.test(text) || /^\\\[(.|\s)+\\\]$/.test(text) ||
+          /^\$\$(.|\s)+\$\$$/.test(text) ||
+          /^\\begin\{([^}]+)\}(.|\s)+\\end\{[^}]+\}$/.test(text)) {
+        code.outerHTML = code.innerHTML;  // remove <code></code>
+        continue;
+      }
+    }
+    i++;
+  }
+};
+slideshow._releaseMath(document);
+</script>
+<!-- dynamically load mathjax for compatibility with self-contained -->
+<script>
+(function () {
+  var script = document.createElement('script');
+  script.type = 'text/javascript';
+  script.src  = 'https://mathjax.rstudio.com/latest/MathJax.js?config=TeX-MML-AM_CHTML';
+  if (location.protocol !== 'file:' && /^https?:/.test(script.src))
+    script.src  = script.src.replace(/^https?:/, '');
+  document.getElementsByTagName('head')[0].appendChild(script);
+})();
+</script>
+  </body>
+</html>
